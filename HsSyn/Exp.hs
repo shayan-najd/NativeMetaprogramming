@@ -3,6 +3,41 @@
 
 module HsExpr where
 
+data Located a
+data Id
+data Name
+data OccName
+data HsWrapper
+data GlobalRdrEnv
+data AmbiguousFieldOcc a
+data FastString
+data HsIPName
+data HsOverLit a
+data HsLit
+data LHsWcType a
+data PostRn a b
+data PostTc a b
+data Fixity
+data Boxity
+data Type
+data HsLocalBinds a
+data ConLike
+data LHsRecUpdField a
+data LHsSigWcType a
+data SourceText
+data StringLiteral
+data Tickish a
+data HsRecFields a b
+data Origin
+data LPat a
+data LHsType a
+data HsLocalBindsLR a b
+data SrcSpan
+data LHsDecl a
+data HsGroup a
+class OutputableBndr a
+
+
 type LHsExpr id = Located (HsExpr id)
 
 type PostTcExpr  = HsExpr Id
