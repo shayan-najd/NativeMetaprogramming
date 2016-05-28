@@ -3,31 +3,6 @@
 
 module HsExpr where
 
-import HsDecls
-import HsPat
-import HsLit
-import PlaceHolder ( PostTc,PostRn,DataId )
-import HsTypes
-import HsBinds
-
-import TcEvidence
-import CoreSyn
-import Var
-import DynFlags ( gopt, GeneralFlag(Opt_PrintExplicitCoercions) )
-import Name
-import RdrName  ( GlobalRdrEnv )
-import BasicTypes
-import ConLike
-import SrcLoc
-import Util
-import StaticFlags( opt_PprStyle_Debug )
-import Outputable
-import FastString
-import Type
-
-import Data.Data hiding (Fixity)
-import Data.Maybe (isNothing)
-
 type LHsExpr id = Located (HsExpr id)
 
 type PostTcExpr  = HsExpr Id
