@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Expr where
+module Exp where
 
 data Located a
 data Id
@@ -38,23 +38,23 @@ data Group a
 class OutputableBndr a
 
 
-type LExpr id = Located (Expr id)
+type LExp id = Located (Exp id)
 
-type PostTcExpr  = Expr Id
+type PostTcExp  = Exp Id
 
-type PostTcTable = [(Name, PostTcExpr)]
+type PostTcTable = [(Name, PostTcExp)]
 
-data SyntaxExpr id = SyntaxExpr { syn_expr      :: Expr id
+data SyntaxExp id = SyntaxExp { syn_expr      :: Exp id
                                 , syn_arg_wraps :: [Wrapper]
                                 , syn_res_wrap  :: Wrapper }
 
-type CmdSyntaxTable id = [(Name, Expr id)]
+type CmdSyntaxTable id = [(Name, Exp id)]
 
 data UnboundVar
   = OutOfScope OccName GlobalRdrEnv
-  | TrueExprHole OccName
+  | TrueExpHole OccName
 
-data Expr id
+data Exp id
   = Var     (Located id)
 
   | UnboundVar UnboundVar
@@ -64,69 +64,69 @@ data Expr id
   | IPVar   IPName
   | OverLit (OverLit id)
   | Lit     Lit
-  | Lam     (MatchGroup id (LExpr id))
+  | Lam     (MatchGroup id (LExp id))
 
-  | LamCase (MatchGroup id (LExpr id))
+  | LamCase (MatchGroup id (LExp id))
 
-  | App     (LExpr id) (LExpr id)
-  | AppType (LExpr id) (LWcType id)
+  | App     (LExp id) (LExp id)
+  | AppType (LExp id) (LWcType id)
 
-  | AppTypeOut (LExpr id) (LWcType Name)
+  | AppTypeOut (LExp id) (LWcType Name)
 
-  | OpApp       (LExpr id)
-                (LExpr id)
+  | OpApp       (LExp id)
+                (LExp id)
                 (PostRn id Fixity)
-                (LExpr id)
+                (LExp id)
 
-  | NegApp      (LExpr id)
-                (SyntaxExpr id)
+  | NegApp      (LExp id)
+                (SyntaxExp id)
 
-  | Par       (LExpr id)
-  | SectionL    (LExpr id)
-                (LExpr id)
-  | SectionR    (LExpr id)
-                (LExpr id)
+  | Par       (LExp id)
+  | SectionL    (LExp id)
+                (LExp id)
+  | SectionR    (LExp id)
+                (LExp id)
 
   | ExplicitTuple
         [LTupArg id]
         Boxity
 
-  | Case      (LExpr id)
-                (MatchGroup id (LExpr id))
+  | Case      (LExp id)
+                (MatchGroup id (LExp id))
 
-  | If        (Maybe (SyntaxExpr id))
+  | If        (Maybe (SyntaxExp id))
 
-                (LExpr id)
-                (LExpr id)
-                (LExpr id)
+                (LExp id)
+                (LExp id)
+                (LExp id)
 
-  | MultiIf   (PostTc id Type) [LGRHS id (LExpr id)]
+  | MultiIf   (PostTc id Type) [LGRHS id (LExp id)]
 
   | Let       (Located (LocalBinds id))
-                (LExpr  id)
+                (LExp  id)
 
   | Do        (StmtContext Name)
 
-                (Located [ExprLStmt id])
+                (Located [ExpLStmt id])
                 (PostTc id Type)
 
   | ExplicitList
                 (PostTc id Type)
-                (Maybe (SyntaxExpr id))
-                [LExpr id]
+                (Maybe (SyntaxExp id))
+                [LExp id]
 
   | ExplicitPArr
                 (PostTc id Type)
-                [LExpr id]
+                [LExp id]
 
   | RecordCon
       { rcon_con_name :: Located id
       , rcon_con_like :: PostTc id ConLike
-      , rcon_con_expr :: PostTcExpr
+      , rcon_con_expr :: PostTcExp
       , rcon_flds     :: RecordBinds id }
 
   | RecordUpd
-      { rupd_expr :: LExpr id
+      { rupd_expr :: LExp id
       , rupd_flds :: [LRecUpdField id]
       , rupd_cons :: PostTc id [ConLike]
 
@@ -136,29 +136,29 @@ data Expr id
       , rupd_wrap :: PostTc id Wrapper
       }
 
-  | ExprWithTySig
-                (LExpr id)
+  | ExpWithTySig
+                (LExp id)
                 (LSigWcType id)
-  | ExprWithTySigOut
-                (LExpr id)
+  | ExpWithTySigOut
+                (LExp id)
                 (LSigWcType Name)
 
   | ArithSeq
-                PostTcExpr
-                (Maybe (SyntaxExpr id))
+                PostTcExp
+                (Maybe (SyntaxExp id))
                 (ArithSeqInfo id)
 
   | PArrSeq
-                PostTcExpr
+                PostTcExp
                 (ArithSeqInfo id)
 
   | SCC       SourceText
                 StringLiteral
-                (LExpr id)
+                (LExp id)
 
   | CoreAnn   SourceText
                 StringLiteral
-                (LExpr id)
+                (LExp id)
 
   | Bracket    (Bracket id)
 
@@ -174,52 +174,52 @@ data Expr id
   | Proc      (LPat id)
                 (LCmdTop id)
 
-  | Static    (LExpr id)
+  | Static    (LExp id)
 
   | ArrApp
-        (LExpr id)
-        (LExpr id)
+        (LExp id)
+        (LExp id)
         (PostTc id Type)
         ArrAppType
         Bool
 
   | ArrForm
-        (LExpr id)
+        (LExp id)
 
         (Maybe Fixity)
         [LCmdTop id]
 
   | Tick
      (Tickish id)
-     (LExpr id)
+     (LExp id)
   | BinTick
      Int
      Int
-     (LExpr id)
+     (LExp id)
 
   | TickPragma
      SourceText
      (StringLiteral,(Int,Int),(Int,Int))
      ((SourceText,SourceText),(SourceText,SourceText))
 
-     (LExpr id)
+     (LExp id)
 
   | EWildPat
 
   | EAsPat      (Located id)
-                (LExpr id)
+                (LExp id)
 
-  | EViewPat    (LExpr id)
-                (LExpr id)
+  | EViewPat    (LExp id)
+                (LExp id)
 
-  | ELazyPat    (LExpr id)
+  | ELazyPat    (LExp id)
 
   |  Wrap     Wrapper
-                (Expr id)
+                (Exp id)
 type LTupArg id = Located (TupArg id)
 
 data TupArg id
-  = Present (LExpr id)
+  = Present (LExp id)
   | Missing (PostTc id Type)
 
 data LWcTypeX = forall id. OutputableBndr id => LWcTypeX (LWcType id)
@@ -228,28 +228,28 @@ type LCmd id = Located (Cmd id)
 
 data Cmd id
   = CmdArrApp
-        (LExpr id)
-        (LExpr id)
+        (LExp id)
+        (LExp id)
         (PostTc id Type)
         ArrAppType
         Bool
 
   | CmdArrForm
-        (LExpr id)
+        (LExp id)
 
         (Maybe Fixity)
         [LCmdTop id]
   | CmdApp    (LCmd id)
-                (LExpr id)
+                (LExp id)
   | CmdLam    (MatchGroup id (LCmd id))
 
   | CmdPar    (LCmd id)
 
-  | CmdCase   (LExpr id)
+  | CmdCase   (LExp id)
                 (MatchGroup id (LCmd id))
 
-  | CmdIf     (Maybe (SyntaxExpr id))
-                (LExpr id)
+  | CmdIf     (Maybe (SyntaxExp id))
+                (LExp id)
                 (LCmd id)
                 (LCmd id)
 
@@ -272,7 +272,7 @@ data CmdTop id
              (PostTc id Type)
              (CmdSyntaxTable id)
 
-type RecordBinds id = RecFields id (LExpr id)
+type RecordBinds id = RecFields id (LExp id)
 
 data MatchGroup id body
   = MG { mg_alts    :: Located [LMatch id body]
@@ -312,56 +312,56 @@ type LStmtLR idL idR body = Located (StmtLR idL idR body)
 type Stmt id body = StmtLR id id body
 type CmdLStmt   id = LStmt id (LCmd  id)
 type CmdStmt    id = Stmt  id (LCmd  id)
-type ExprLStmt  id = LStmt id (LExpr id)
-type ExprStmt   id = Stmt  id (LExpr id)
-type GuardLStmt id = LStmt id (LExpr id)
-type GuardStmt  id = Stmt  id (LExpr id)
-type GhciLStmt  id = LStmt id (LExpr id)
-type GhciStmt   id = Stmt  id (LExpr id)
+type ExpLStmt  id = LStmt id (LExp id)
+type ExpStmt   id = Stmt  id (LExp id)
+type GuardLStmt id = LStmt id (LExp id)
+type GuardStmt  id = Stmt  id (LExp id)
+type GhciLStmt  id = LStmt id (LExp id)
+type GhciStmt   id = Stmt  id (LExp id)
 
 data StmtLR idL idR body
   = LastStmt
 
           body
           Bool
-          (SyntaxExpr idR)
+          (SyntaxExp idR)
 
   | BindStmt (LPat idL)
              body
-             (SyntaxExpr idR)
-             (SyntaxExpr idR)
+             (SyntaxExp idR)
+             (SyntaxExp idR)
 
              (PostTc idR Type)
 
   | ApplicativeStmt
-             [ ( SyntaxExpr idR
+             [ ( SyntaxExp idR
                , ApplicativeArg idL idR) ]
-             (Maybe (SyntaxExpr idR))
+             (Maybe (SyntaxExp idR))
              (PostTc idR Type)
   | BodyStmt body
-             (SyntaxExpr idR)
-             (SyntaxExpr idR)
+             (SyntaxExp idR)
+             (SyntaxExp idR)
              (PostTc idR Type)
 
   | LetStmt  (Located (LocalBindsLR idL idR))
 
   | ParStmt  [ParStmtBlock idL idR]
-             (Expr idR)
-             (SyntaxExpr idR)
+             (Exp idR)
+             (SyntaxExp idR)
              (PostTc idR Type)
 
   | TransStmt {
       trS_form  :: TransForm,
-      trS_stmts :: [ExprLStmt idL],
+      trS_stmts :: [ExpLStmt idL],
 
       trS_bndrs :: [(idR, idR)],
-      trS_using :: LExpr idR,
-      trS_by :: Maybe (LExpr idR),
+      trS_using :: LExp idR,
+      trS_by :: Maybe (LExp idR),
 
-      trS_ret :: SyntaxExpr idR,
-      trS_bind :: SyntaxExpr idR,
+      trS_ret :: SyntaxExp idR,
+      trS_bind :: SyntaxExp idR,
       trS_bind_arg_ty :: PostTc idR Type,
-      trS_fmap :: Expr idR
+      trS_fmap :: Exp idR
 
     }
 
@@ -372,13 +372,13 @@ data StmtLR idL idR body
 
      , recS_rec_ids :: [idR]
 
-     , recS_bind_fn :: SyntaxExpr idR
-     , recS_ret_fn  :: SyntaxExpr idR
-     , recS_mfix_fn :: SyntaxExpr idR
+     , recS_bind_fn :: SyntaxExp idR
+     , recS_ret_fn  :: SyntaxExp idR
+     , recS_mfix_fn :: SyntaxExp idR
      , recS_bind_ty :: PostTc idR Type
 
-     , recS_later_rets :: [PostTcExpr]
-     , recS_rec_rets :: [PostTcExpr]
+     , recS_later_rets :: [PostTcExp]
+     , recS_rec_rets :: [PostTcExp]
 
       , recS_ret_ty :: PostTc idR Type
 
@@ -390,26 +390,26 @@ data TransForm
 
 data ParStmtBlock idL idR
   = ParStmtBlock
-        [ExprLStmt idL]
+        [ExpLStmt idL]
         [idR]
-        (SyntaxExpr idR)
+        (SyntaxExp idR)
 
 data ApplicativeArg idL idR
   = ApplicativeArgOne
       (LPat idL)
-      (LExpr idL)
+      (LExp idL)
   | ApplicativeArgMany
-      [ExprLStmt idL]
-      (Expr idL)
+      [ExpLStmt idL]
+      (Exp idL)
       (LPat idL)
 
 data Splice id
    = TypedSplice
         id
-        (LExpr id)
+        (LExp id)
    | UntypedSplice
         id
-        (LExpr id)
+        (LExp id)
    | QuasiQuote
         id
         id
@@ -419,7 +419,7 @@ data Splice id
 type SplicePointName = Name
 
 data PendingRnSplice
-  = PendingRnSplice UntypedSpliceFlavour SplicePointName (LExpr Name)
+  = PendingRnSplice UntypedSpliceFlavour SplicePointName (LExp Name)
 
 data UntypedSpliceFlavour
   = UntypedExpSplice
@@ -428,32 +428,32 @@ data UntypedSpliceFlavour
   | UntypedDeclSplice
 
 data PendingTcSplice
-  = PendingTcSplice SplicePointName (LExpr Id)
+  = PendingTcSplice SplicePointName (LExp Id)
 
-data Bracket id = ExpBr (LExpr id)
+data Bracket id = ExpBr (LExp id)
                   | PatBr (LPat id)
                   | DecBrL [LDecl id]
                   | DecBrG (Group id)
                   | TypBr (LType id)
                   | VarBr Bool id
-                  | TExpBr (LExpr id)
+                  | TExpBr (LExp id)
 
 data ArithSeqInfo id
-  = From            (LExpr id)
-  | FromThen        (LExpr id)
-                    (LExpr id)
-  | FromTo          (LExpr id)
-                    (LExpr id)
-  | FromThenTo      (LExpr id)
-                    (LExpr id)
-                    (LExpr id)
+  = From            (LExp id)
+  | FromThen        (LExp id)
+                    (LExp id)
+  | FromTo          (LExp id)
+                    (LExp id)
+  | FromThenTo      (LExp id)
+                    (LExp id)
+                    (LExp id)
 
 data MatchContext id
   = FunRhs id
-  | LambdaExpr
+  | LambdaExp
   | CaseAlt
   | IfAlt
-  | ProcExpr
+  | ProcExp
   | PatBindRhs
   | RecUpd
 
@@ -467,9 +467,9 @@ data StmtContext id
   = ListComp
   | MonadComp
   | PArrComp
-  | DoExpr
-  | MDoExpr
-  | ArrowExpr
+  | DoExp
+  | MDoExp
+  | ArrowExp
   | GhciStmtCtxt
   | PatGuard (MatchContext id)
   | ParStmtCtxt (StmtContext id)
