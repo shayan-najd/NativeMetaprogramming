@@ -560,3 +560,11 @@ type RecUpdField id =
 
 data RecField' id arg = RecField{hsRecFieldLbl :: Located id,
                                      hsRecFieldArg :: arg, hsRecPun :: Bool}
+
+
+--------------------------------------------------------------------------------
+-- Doc
+
+newtype HsDocString = HsDocString FastString
+
+type LHsDocString = Located HsDocString
