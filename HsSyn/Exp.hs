@@ -3,6 +3,8 @@
 
 module Exp where
 
+data TCRType
+type TCRKind = TCRType
 data FractionalLit
 data Located a
 data Id
@@ -10,53 +12,37 @@ data Name
 data OccName
 data Wrapper
 data GlobalRdrEnv
-data AmbiguousFieldOcc a
 data ByteString
 data FastString
-data IPName
-data LWcType a
 data PostRn a b
 data PostTc a b
 data Fixity
 data Boxity
-data Type
 data ConLike
-data LSigWcType a
 data SourceText
 data StringLiteral
 data Tickish a
 data Origin
-data LType a
 data SrcSpan
 class OutputableBndr a
-data FieldOcc a
 data TyVar
 data EvVar
 data TcEvBinds
-data ConDetails a b
 data ModuleName
 data FieldLbl a
 data RecFlag
 data Bag a
 data NameSet
-data LSigType a
 data InlinePragma
 data LBooleanFormula a
-data LQTyVars a
-data LContext a
 data FunDep a
-data LKind a
-data LTyVarBndr a
 data CType
-data LBangType a
-data ImplicitBndrs a b
 data OverlapMode
 data Coercion
 data Safety
 data TyCon
 data Activation
 data RuleName
-data LConDeclField a
 data CCallConv
 data Header
 data Class
@@ -66,7 +52,8 @@ data CLabelString
 data CCallTarget
 data CExportSpec
 data WarningTxt
-
+data SrcBang
+data RdrName
 
 data Lit
   = Char          SourceText Char
@@ -79,8 +66,8 @@ data Lit
   | WordPrim      SourceText Integer
   | Int64Prim     SourceText Integer
   | Word64Prim    SourceText Integer
-  | Integer       SourceText Integer Type
-  | Rat           FractionalLit Type
+  | Integer       SourceText Integer TCRType
+  | Rat           FractionalLit TCRType
   | FloatPrim     FractionalLit
   | DoublePrim    FractionalLit
 
@@ -89,7 +76,7 @@ data OverLit id
         ol_val :: OverLitVal,
         ol_rebindable :: PostRn id Bool,
         ol_witness :: Exp id,
-        ol_type :: PostTc id Type }
+        ol_type :: PostTc id TCRType }
 
 data OverLitVal
   = Integral   !SourceText !Integer
@@ -158,7 +145,7 @@ data Exp id
                 (LExp id)
                 (LExp id)
 
-  | MultiIf   (PostTc id Type) [LGRHS id (LExp id)]
+  | MultiIf   (PostTc id TCRType) [LGRHS id (LExp id)]
 
   | Let       (Located (LocalBinds id))
                 (LExp  id)
@@ -166,15 +153,15 @@ data Exp id
   | Do        (StmtContext Name)
 
                 (Located [ExpLStmt id])
-                (PostTc id Type)
+                (PostTc id TCRType)
 
   | ExplicitList
-                (PostTc id Type)
+                (PostTc id TCRType)
                 (Maybe (SyntaxExp id))
                 [LExp id]
 
   | ExplicitPArr
-                (PostTc id Type)
+                (PostTc id TCRType)
                 [LExp id]
 
   | RecordCon
@@ -188,8 +175,8 @@ data Exp id
       , rupd_flds :: [LRecUpdField id]
       , rupd_cons :: PostTc id [ConLike]
 
-      , rupd_in_tys  :: PostTc id [Type]
-      , rupd_out_tys :: PostTc id [Type]
+      , rupd_in_tys  :: PostTc id [TCRType]
+      , rupd_out_tys :: PostTc id [TCRType]
 
       , rupd_wrap :: PostTc id Wrapper
       }
@@ -237,7 +224,7 @@ data Exp id
   | ArrApp
         (LExp id)
         (LExp id)
-        (PostTc id Type)
+        (PostTc id TCRType)
         ArrAppType
         Bool
 
@@ -278,7 +265,7 @@ type LTupArg id = Located (TupArg id)
 
 data TupArg id
   = Present (LExp id)
-  | Missing (PostTc id Type)
+  | Missing (PostTc id TCRType)
 
 data LWcTypeX = forall id. OutputableBndr id => LWcTypeX (LWcType id)
 
@@ -288,7 +275,7 @@ data Cmd id
   = CmdArrApp
         (LExp id)
         (LExp id)
-        (PostTc id Type)
+        (PostTc id TCRType)
         ArrAppType
         Bool
 
@@ -315,7 +302,7 @@ data Cmd id
                 (LCmd  id)
 
   | CmdDo     (Located [CmdLStmt id])
-                (PostTc id Type)
+                (PostTc id TCRType)
 
   | CmdWrap   Wrapper
                 (Cmd id)
@@ -326,16 +313,16 @@ type LCmdTop id = Located (CmdTop id)
 
 data CmdTop id
   = CmdTop (LCmd id)
-             (PostTc id Type)
-             (PostTc id Type)
+             (PostTc id TCRType)
+             (PostTc id TCRType)
              (CmdSyntaxTable id)
 
 type RecordBinds id = RecFields id (LExp id)
 
 data MatchGroup id body
   = MG { mg_alts    :: Located [LMatch id body]
-       , mg_arg_tys :: [PostTc id Type]
-       , mg_res_ty  :: PostTc id Type
+       , mg_arg_tys :: [PostTc id TCRType]
+       , mg_res_ty  :: PostTc id TCRType
        , mg_origin  :: Origin }
 
 type LMatch id body = Located (Match id body)
@@ -389,24 +376,24 @@ data StmtLR idL idR body
              (SyntaxExp idR)
              (SyntaxExp idR)
 
-             (PostTc idR Type)
+             (PostTc idR TCRType)
 
   | ApplicativeStmt
              [ ( SyntaxExp idR
                , ApplicativeArg idL idR) ]
              (Maybe (SyntaxExp idR))
-             (PostTc idR Type)
+             (PostTc idR TCRType)
   | BodyStmt body
              (SyntaxExp idR)
              (SyntaxExp idR)
-             (PostTc idR Type)
+             (PostTc idR TCRType)
 
   | LetStmt  (Located (LocalBindsLR idL idR))
 
   | ParStmt  [ParStmtBlock idL idR]
              (Exp idR)
              (SyntaxExp idR)
-             (PostTc idR Type)
+             (PostTc idR TCRType)
 
   | TransStmt {
       trS_form  :: TransForm,
@@ -418,7 +405,7 @@ data StmtLR idL idR body
 
       trS_ret :: SyntaxExp idR,
       trS_bind :: SyntaxExp idR,
-      trS_bind_arg_ty :: PostTc idR Type,
+      trS_bind_arg_ty :: PostTc idR TCRType,
       trS_fmap :: Exp idR
 
     }
@@ -433,12 +420,12 @@ data StmtLR idL idR body
      , recS_bind_fn :: SyntaxExp idR
      , recS_ret_fn  :: SyntaxExp idR
      , recS_mfix_fn :: SyntaxExp idR
-     , recS_bind_ty :: PostTc idR Type
+     , recS_bind_ty :: PostTc idR TCRType
 
      , recS_later_rets :: [PostTcExp]
      , recS_rec_rets :: [PostTcExp]
 
-      , recS_ret_ty :: PostTc idR Type
+      , recS_ret_ty :: PostTc idR TCRType
 
       }
 
@@ -542,30 +529,30 @@ type OutPat id = LPat id
 
 type LPat id = Located (Pat id)
 
-data Pat id = WildPat (PostTc id Type)
+data Pat id = WildPat (PostTc id TCRType)
             | VarPat (Located id)
             | LazyPat (LPat id)
             | AsPat (Located id) (LPat id)
             | ParPat (LPat id)
             | BangPat (LPat id)
-            | ListPat [LPat id] (PostTc id Type)
-                      (Maybe (PostTc id Type, SyntaxExp id))
-            | TuplePat [LPat id] Boxity [PostTc id Type]
-            | PArrPat [LPat id] (PostTc id Type)
+            | ListPat [LPat id] (PostTc id TCRType)
+                      (Maybe (PostTc id TCRType, SyntaxExp id))
+            | TuplePat [LPat id] Boxity [PostTc id TCRType]
+            | PArrPat [LPat id] (PostTc id TCRType)
             | ConPatIn (Located id) (ConPatDetails id)
-            | ConPatOut{pat_con :: Located ConLike, pat_arg_tys :: [Type],
+            | ConPatOut{pat_con :: Located ConLike, pat_arg_tys :: [TCRType],
                         pat_tvs :: [TyVar], pat_dicts :: [EvVar], pat_binds :: TcEvBinds,
                         pat_args :: ConPatDetails id, pat_wrap :: Wrapper}
-            | ViewPat (LExp id) (LPat id) (PostTc id Type)
+            | ViewPat (LExp id) (LPat id) (PostTc id TCRType)
             | SplicePat (Splice id)
             | LitPat Lit
             | NPat (Located (OverLit id)) (Maybe (SyntaxExp id))
-                   (SyntaxExp id) (PostTc id Type)
+                   (SyntaxExp id) (PostTc id TCRType)
             | NPlusKPat (Located id) (Located (OverLit id)) (OverLit id)
-                        (SyntaxExp id) (SyntaxExp id) (PostTc id Type)
+                        (SyntaxExp id) (SyntaxExp id) (PostTc id TCRType)
             | SigPatIn (LPat id) (LSigWcType id)
-            | SigPatOut (LPat id) Type
-            | CoPat Wrapper (Pat id) Type
+            | SigPatOut (LPat id) TCRType
+            | CoPat Wrapper (Pat id) TCRType
 
 type ConPatDetails id =
      ConDetails (LPat id) (RecFields id (LPat id))
@@ -658,7 +645,7 @@ data BindLR idL idR = FunBind{fun_id :: Located idL,
                                 fun_co_fn :: Wrapper, bind_fvs :: PostRn idL NameSet,
                                 fun_tick :: [Tickish Id]}
                       | PatBind{pat_lhs :: LPat idL, pat_rhs :: GRHSs idR (LExp idR),
-                                pat_rhs_ty :: PostTc idR Type, bind_fvs :: PostRn idL NameSet,
+                                pat_rhs_ty :: PostTc idR TCRType, bind_fvs :: PostRn idL NameSet,
                                 pat_ticks :: ([Tickish Id], [[Tickish Id]])}
                       | VarBind{var_id :: idL, var_rhs :: LExp idR,
                                 var_inline :: Bool}
@@ -777,8 +764,9 @@ data TyClGroup name = TyClGroup{group_tyclds :: [LTyClDecl name],
 
 type LFamilyResultSig name = Located (FamilyResultSig name)
 
+-- KingSig --> KindSig'
 data FamilyResultSig name = NoSig
-                          | KindSig (LKind name)
+                          | KindSig' (LKind name)
                           | TyVarSig (LTyVarBndr name)
 
 type LFamilyDecl name = Located (FamilyDecl name)
@@ -947,3 +935,107 @@ type LRoleAnnotDecl name = Located (RoleAnnotDecl name)
 
 data RoleAnnotDecl name = RoleAnnotDecl (Located name)
                                         [Located (Maybe Role)]
+
+-------------------------------------------------------------------------------
+-- Types
+
+type LBangType name = Located (BangType name)
+
+type BangType name = Type name
+
+type LContext name = Located (Context name)
+
+type Context name = [LType name]
+
+type LType name = Located (Type name)
+
+type Kind name = Type name
+
+type LKind name = Located (Kind name)
+
+type LTyVarBndr name = Located (TyVarBndr name)
+
+data LQTyVars name = QTvs{hsq_implicit :: PostRn name [Name],
+                              hsq_explicit :: [LTyVarBndr name],
+                              hsq_dependent :: PostRn name NameSet}
+
+data ImplicitBndrs name thing = IB{hsib_vars ::
+                                       PostRn name [Name],
+                                       hsib_body :: thing}
+
+data WildCardBndrs name thing = WC{hswc_wcs ::
+                                       PostRn name [Name],
+                                       hswc_ctx :: Maybe SrcSpan, hswc_body :: thing}
+
+type LSigType name = ImplicitBndrs name (LType name)
+
+type LWcType name = WildCardBndrs name (LType name)
+
+type LSigWcType name = ImplicitBndrs name (LWcType name)
+
+newtype IPName = IPName FastString
+
+data TyVarBndr name = UserTyVar (Located name)
+                      | KindedTyVar (Located name) (LKind name)
+
+data Type name = ForAllTy{hst_bndrs :: [LTyVarBndr name],
+                              hst_body :: LType name}
+                 | QualTy{hst_ctxt :: LContext name, hst_body :: LType name}
+                 | TyVar (Located name)
+                 | AppsTy [LAppType name]
+                 | AppTy (LType name) (LType name)
+                 | FunTy (LType name) (LType name)
+                 | ListTy (LType name)
+                 | PArrTy (LType name)
+                 | TupleTy TupleSort [LType name]
+                 | OpTy (LType name) (Located name) (LType name)
+                 | ParTy (LType name)
+                 | IParamTy IPName (LType name)
+                 | EqTy (LType name) (LType name)
+                 | KindSig (LType name) (LKind name)
+                 | SpliceTy (Splice name) (PostTc name TCRKind)
+                 | DocTy (LType name) LDocString
+                 | BangTy SrcBang (LType name)
+                 | RecTy [LConDeclField name]
+                 | CoreTy TCRType
+                 | ExplicitListTy (PostTc name TCRKind) [LType name]
+                 | ExplicitTupleTy [PostTc name TCRKind] [LType name]
+                 | TyLit TyLit
+                 | WildCardTy (WildCardInfo name)
+
+data TyLit = NumTy SourceText Integer
+             | StrTy SourceText FastString
+
+newtype WildCardInfo name = AnonWildCard (PostRn name
+                                              (Located Name))
+
+
+type LAppType name = Located (AppType name)
+
+data AppType name = AppInfix (Located name)
+                    | AppPrefix (LType name)
+
+data TupleSort = UnboxedTuple
+                 | BoxedTuple
+                 | ConstraintTuple
+                 | BoxedOrConstraintTuple
+
+type LConDeclField name = Located (ConDeclField name)
+
+data ConDeclField name = ConDeclField{cd_fld_names ::
+                                      [LFieldOcc name],
+                                      cd_fld_type :: LBangType name,
+                                      cd_fld_doc :: Maybe LDocString}
+
+data ConDetails arg rec = PrefixCon [arg]
+                          | RecCon rec
+                          | InfixCon arg arg
+
+type LFieldOcc name = Located (FieldOcc name)
+
+data FieldOcc name = FieldOcc{rdrNameFieldOcc :: Located RdrName,
+                              selectorFieldOcc :: PostRn name name}
+
+data AmbiguousFieldOcc name = Unambiguous (Located RdrName)
+                                          (PostRn name name)
+                            | Ambiguous (Located RdrName) (PostTc name name)
