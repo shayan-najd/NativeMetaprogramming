@@ -3,6 +3,7 @@
 
 module Exp where
 
+data FractionalLit
 data Located a
 data Id
 data Name
@@ -10,10 +11,9 @@ data OccName
 data Wrapper
 data GlobalRdrEnv
 data AmbiguousFieldOcc a
+data ByteString
 data FastString
 data IPName
-data OverLit a
-data Lit
 data LWcType a
 data PostRn a b
 data PostTc a b
@@ -36,6 +36,34 @@ data SrcSpan
 data LDecl a
 data Group a
 class OutputableBndr a
+
+data Lit
+  = Char          SourceText Char
+  | CharPrim      SourceText Char
+  | String        SourceText FastString
+  | StringPrim    SourceText ByteString
+  | Int           SourceText Integer
+
+  | IntPrim       SourceText Integer
+  | WordPrim      SourceText Integer
+  | Int64Prim     SourceText Integer
+  | Word64Prim    SourceText Integer
+  | Integer       SourceText Integer Type
+  | Rat           FractionalLit Type
+  | FloatPrim     FractionalLit
+  | DoublePrim    FractionalLit
+
+data OverLit id
+  = OverLit' {
+        ol_val :: OverLitVal,
+        ol_rebindable :: PostRn id Bool,
+        ol_witness :: Exp id,
+        ol_type :: PostTc id Type }
+
+data OverLitVal
+  = Integral   !SourceText !Integer
+  | Fractional !FractionalLit
+  | IsString   !SourceText !FastString
 
 
 type LExp id = Located (Exp id)
