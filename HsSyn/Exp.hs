@@ -20,7 +20,6 @@ data PostTc a b
 data Fixity
 data Boxity
 data Type
-data LocalBinds a
 data ConLike
 data LSigWcType a
 data SourceText
@@ -28,7 +27,6 @@ data StringLiteral
 data Tickish a
 data Origin
 data LType a
-data LocalBindsLR a b
 data SrcSpan
 data LDecl a
 data Group a
@@ -40,6 +38,12 @@ data TcEvBinds
 data ConDetails a b
 data ModuleName
 data FieldLbl a
+data RecFlag
+data Bag a
+data NameSet
+data LSigType a
+data InlinePragma
+data LBooleanFormula a
 
 data Lit
   = Char          SourceText Char
@@ -565,9 +569,9 @@ data RecField' id arg = RecField{hsRecFieldLbl :: Located id,
 --------------------------------------------------------------------------------
 -- Doc
 
-newtype HsDocString = HsDocString FastString
+newtype DocString = DocString FastString
 
-type LHsDocString = Located HsDocString
+type LDocString = Located DocString
 
 --------------------------------------------------------------------------------
 -- ImpExp
@@ -594,9 +598,101 @@ data IE name = IEVar (Located name)
              | IEThingWith (Located name) IEWildcard [Located name]
                            [Located (FieldLbl name)]
              | IEModuleContents (Located ModuleName)
-             | IEGroup Int HsDocString
-             | IEDoc HsDocString
+             | IEGroup Int DocString
+             | IEDoc DocString
              | IEDocNamed String
 
 data IEWildcard = NoIEWildcard
                 | IEWildcard Int
+
+-------------------------------------------------------------------------------
+-- Binds
+
+type LocalBinds id = LocalBindsLR id id
+
+data LocalBindsLR idL idR = ValBinds (ValBindsLR idL idR)
+                            | IPBinds (IPBinds idR)
+                            | EmptyLocalBinds
+
+type ValBinds id = ValBindsLR id id
+
+data ValBindsLR idL idR = ValBindsIn (LBindsLR idL idR)
+                                       [LSig idR]
+                          | ValBindsOut [(RecFlag, LBinds idL)] [LSig Name]
+
+type LBind id = LBindLR id id
+
+type LBinds id = LBindsLR id id
+
+type Bind id = BindLR id id
+
+type LBindsLR idL idR = Bag (LBindLR idL idR)
+
+type LBindLR idL idR = Located (BindLR idL idR)
+
+data BindLR idL idR = FunBind{fun_id :: Located idL,
+                                fun_matches :: MatchGroup idR (LExp idR),
+                                fun_co_fn :: Wrapper, bind_fvs :: PostRn idL NameSet,
+                                fun_tick :: [Tickish Id]}
+                      | PatBind{pat_lhs :: LPat idL, pat_rhs :: GRHSs idR (LExp idR),
+                                pat_rhs_ty :: PostTc idR Type, bind_fvs :: PostRn idL NameSet,
+                                pat_ticks :: ([Tickish Id], [[Tickish Id]])}
+                      | VarBind{var_id :: idL, var_rhs :: LExp idR,
+                                var_inline :: Bool}
+                      | AbsBinds{abs_tvs :: [TyVar], abs_ev_vars :: [EvVar],
+                                 abs_exports :: [ABExport idL], abs_ev_binds :: [TcEvBinds],
+                                 abs_binds :: LBinds idL}
+                      | AbsBindsSig{abs_tvs :: [TyVar], abs_ev_vars :: [EvVar],
+                                    abs_sig_export :: idL, abs_sig_prags :: TcSpecPrags,
+                                    abs_sig_ev_bind :: TcEvBinds, abs_sig_bind :: LBind idL}
+                      | PatSynBind (PatSynBind idL idR)
+
+data ABExport id = ABE{abe_poly :: id, abe_mono :: id,
+                       abe_wrap :: Wrapper, abe_prags :: TcSpecPrags}
+
+data PatSynBind idL idR = PSB{psb_id :: Located idL,
+                              psb_fvs :: PostRn idR NameSet,
+                              psb_args :: PatSynDetails (Located idR), psb_def :: LPat idR,
+                              psb_dir :: PatSynDir idR}
+
+-- IPBinds'
+data IPBinds id = IPBinds' [LIPBind id] TcEvBinds
+
+type LIPBind id = Located (IPBind id)
+
+data IPBind id = IPBind (Either (Located IPName) id) (LExp id)
+
+type LSig name = Located (Sig name)
+
+data Sig name = TypeSig [Located name] (LSigWcType name)
+              | PatSynSig (Located name) (LSigType name)
+              | ClassOpSig Bool [Located name] (LSigType name)
+              | IdSig Id
+              | FixSig (FixitySig name)
+              | InlineSig (Located name) InlinePragma
+              | SpecSig (Located name) [LSigType name] InlinePragma
+              | SpecInstSig SourceText (LSigType name)
+              | MinimalSig SourceText (LBooleanFormula (Located name))
+
+type LFixitySig name = Located (FixitySig name)
+
+data FixitySig name = FixitySig [Located name] Fixity
+
+data TcSpecPrags = IsDefaultMethod
+                 | SpecPrags [LTcSpecPrag]
+
+type LTcSpecPrag = Located TcSpecPrag
+
+data TcSpecPrag = SpecPrag Id Wrapper InlinePragma
+
+data PatSynDetails a = InfixPatSyn a a
+                       | PrefixPatSyn [a]
+                       | RecordPatSyn [RecordPatSynField a]
+
+data RecordPatSynField a = RecordPatSynField{recordPatSynSelectorId
+                                             :: a,
+                                             recordPatSynPatVar :: a}
+
+data PatSynDir id = Unidirectional
+                    | ImplicitBidirectional
+                    | ExplicitBidirectional (MatchGroup id (LExp id))
