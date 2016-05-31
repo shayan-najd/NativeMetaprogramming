@@ -28,8 +28,6 @@ data Tickish a
 data Origin
 data LType a
 data SrcSpan
-data LDecl a
-data Group a
 class OutputableBndr a
 data FieldOcc a
 data TyVar
@@ -44,6 +42,31 @@ data NameSet
 data LSigType a
 data InlinePragma
 data LBooleanFormula a
+data LQTyVars a
+data LContext a
+data FunDep a
+data LKind a
+data LTyVarBndr a
+data CType
+data LBangType a
+data ImplicitBndrs a b
+data OverlapMode
+data Coercion
+data Safety
+data TyCon
+data Activation
+data RuleName
+data LConDeclField a
+data CCallConv
+data Header
+data Class
+data ClsInst
+data Role
+data CLabelString
+data CCallTarget
+data CExportSpec
+data WarningTxt
+
 
 data Lit
   = Char          SourceText Char
@@ -696,3 +719,231 @@ data RecordPatSynField a = RecordPatSynField{recordPatSynSelectorId
 data PatSynDir id = Unidirectional
                     | ImplicitBidirectional
                     | ExplicitBidirectional (MatchGroup id (LExp id))
+
+------------------------------------------------------------------------------
+-- Decls
+
+type LDecl id = Located (Decl id)
+
+data Decl id = TyClD (TyClDecl id)
+               | InstD (InstDecl id)
+               | DerivD (DerivDecl id)
+               | ValD (Bind id)
+               | SigD (Sig id)
+               | DefD (DefaultDecl id)
+               | ForD (ForeignDecl id)
+               | WarningD (WarnDecls id)
+               | AnnD (AnnDecl id)
+               | RuleD (RuleDecls id)
+               | VectD (VectDecl id)
+               | SpliceD (SpliceDecl id)
+               | DocD (DocDecl)
+               | RoleAnnotD (RoleAnnotDecl id)
+
+data Group id = Group{hs_valds :: ValBinds id,
+                          hs_splcds :: [LSpliceDecl id], hs_tyclds :: [TyClGroup id],
+                          hs_derivds :: [LDerivDecl id], hs_fixds :: [LFixitySig id],
+                          hs_defds :: [LDefaultDecl id], hs_fords :: [LForeignDecl id],
+                          hs_warnds :: [LWarnDecls id], hs_annds :: [LAnnDecl id],
+                          hs_ruleds :: [LRuleDecls id], hs_vects :: [LVectDecl id],
+                          hs_docs :: [LDocDecl]}
+
+data SpliceExplicitFlag = ExplicitSplice
+                        | ImplicitSplice
+
+type LSpliceDecl name = Located (SpliceDecl name)
+
+data SpliceDecl id = SpliceDecl (Located (Splice id))
+                                SpliceExplicitFlag
+
+type LTyClDecl name = Located (TyClDecl name)
+
+data TyClDecl name = FamDecl{tcdFam :: FamilyDecl name}
+                   | SynDecl{tcdLName :: Located name, tcdTyVars :: LQTyVars name,
+                             tcdRhs :: LType name, tcdFVs :: PostRn name NameSet}
+                   | DataDecl{tcdLName :: Located name, tcdTyVars :: LQTyVars name,
+                              tcdDataDefn :: DataDefn name, tcdDataCusk :: PostRn name Bool,
+                              tcdFVs :: PostRn name NameSet}
+                   | ClassDecl{tcdCtxt :: LContext name, tcdLName :: Located name,
+                               tcdTyVars :: LQTyVars name,
+                               tcdFDs :: [Located (FunDep (Located name))],
+                               tcdSigs :: [LSig name], tcdMeths :: LBinds name,
+                               tcdATs :: [LFamilyDecl name], tcdATDefs :: [LTyFamDefltEqn name],
+                               tcdDocs :: [LDocDecl], tcdFVs :: PostRn name NameSet}
+
+data TyClGroup name = TyClGroup{group_tyclds :: [LTyClDecl name],
+                                group_roles :: [LRoleAnnotDecl name],
+                                group_instds :: [LInstDecl name]}
+
+type LFamilyResultSig name = Located (FamilyResultSig name)
+
+data FamilyResultSig name = NoSig
+                          | KindSig (LKind name)
+                          | TyVarSig (LTyVarBndr name)
+
+type LFamilyDecl name = Located (FamilyDecl name)
+
+data FamilyDecl name = FamilyDecl{fdInfo :: FamilyInfo name,
+                                  fdLName :: Located name, fdTyVars :: LQTyVars name,
+                                  fdResultSig :: LFamilyResultSig name,
+                                  fdInjectivityAnn :: Maybe (LInjectivityAnn name)}
+
+type LInjectivityAnn name = Located (InjectivityAnn name)
+
+data InjectivityAnn name = InjectivityAnn (Located name)
+                                          [Located name]
+
+data FamilyInfo name = DataFamily
+                     | OpenTypeFamily
+                     | ClosedTypeFamily (Maybe [LTyFamInstEqn name])
+
+data DataDefn name = DataDefn{dd_ND :: NewOrData,
+                                  dd_ctxt :: LContext name, dd_cType :: Maybe (Located CType),
+                                  dd_kindSig :: Maybe (LKind name), dd_cons :: [LConDecl name],
+                                  dd_derivs :: Deriving name}
+
+type Deriving name = Maybe (Located [LSigType name])
+
+data NewOrData = NewType
+               | DataType
+
+type LConDecl name = Located (ConDecl name)
+
+data ConDecl name = ConDeclGADT{con_names :: [Located name],
+                                con_type :: LSigType name, con_doc :: Maybe LDocString}
+                  | ConDeclH98{con_name :: Located name,
+                               con_qvars :: Maybe (LQTyVars name),
+                               con_cxt :: Maybe (LContext name),
+                               con_details :: ConDeclDetails name,
+                               con_doc :: Maybe LDocString}
+
+type ConDeclDetails name =
+     ConDetails (LBangType name) (Located [LConDeclField name])
+
+type LTyFamInstEqn name = Located (TyFamInstEqn name)
+
+type LTyFamDefltEqn name = Located (TyFamDefltEqn name)
+
+type TyPats name = ImplicitBndrs name [LType name]
+
+type TyFamInstEqn name = TyFamEqn name (TyPats name)
+
+type TyFamDefltEqn name = TyFamEqn name (LQTyVars name)
+
+data TyFamEqn name pats = TyFamEqn{tfe_tycon :: Located name,
+                                   tfe_pats :: pats, tfe_rhs :: LType name}
+
+type LTyFamInstDecl name = Located (TyFamInstDecl name)
+
+data TyFamInstDecl name = TyFamInstDecl{tfid_eqn ::
+                                        LTyFamInstEqn name,
+                                        tfid_fvs :: PostRn name NameSet}
+
+type LDataFamInstDecl name = Located (DataFamInstDecl name)
+
+data DataFamInstDecl name = DataFamInstDecl{dfid_tycon ::
+                                            Located name,
+                                            dfid_pats :: TyPats name,
+                                            dfid_defn :: DataDefn name,
+                                            dfid_fvs :: PostRn name NameSet}
+
+type LClsInstDecl name = Located (ClsInstDecl name)
+
+data ClsInstDecl name = ClsInstDecl{cid_poly_ty :: LSigType name,
+                                    cid_binds :: LBinds name, cid_sigs :: [LSig name],
+                                    cid_tyfam_insts :: [LTyFamInstDecl name],
+                                    cid_datafam_insts :: [LDataFamInstDecl name],
+                                    cid_overlap_mode :: Maybe (Located OverlapMode)}
+
+type LInstDecl name = Located (InstDecl name)
+
+data InstDecl name = ClsInstD{cid_inst :: ClsInstDecl name}
+                   | DataFamInstD{dfid_inst :: DataFamInstDecl name}
+                   | TyFamInstD{tfid_inst :: TyFamInstDecl name}
+
+type LDerivDecl name = Located (DerivDecl name)
+
+data DerivDecl name = DerivDecl{deriv_type :: LSigType name,
+                                deriv_overlap_mode :: Maybe (Located OverlapMode)}
+
+type LDefaultDecl name = Located (DefaultDecl name)
+
+data DefaultDecl name = DefaultDecl [LType name]
+
+type LForeignDecl name = Located (ForeignDecl name)
+
+data ForeignDecl name = ForeignImport{fd_name :: Located name,
+                                      fd_sig_ty :: LSigType name, fd_co :: PostTc name Coercion,
+                                      fd_fi :: ForeignImport}
+                      | ForeignExport{fd_name :: Located name,
+                                      fd_sig_ty :: LSigType name, fd_co :: PostTc name Coercion,
+                                      fd_fe :: ForeignExport}
+
+data ForeignImport = CImport (Located CCallConv) (Located Safety)
+                             (Maybe Header) CImportSpec (Located SourceText)
+
+data CImportSpec = CLabel CLabelString
+                 | CFunction CCallTarget
+                 | CWrapper
+
+data ForeignExport = CExport (Located CExportSpec)
+                             (Located SourceText)
+
+type LRuleDecls name = Located (RuleDecls name)
+
+data RuleDecls name = Rules{rds_src :: SourceText,
+                              rds_rules :: [LRuleDecl name]}
+
+type LRuleDecl name = Located (RuleDecl name)
+
+data RuleDecl name = Rule (Located (SourceText, RuleName))
+                            Activation [LRuleBndr name] (Located (Exp name))
+                            (PostRn name NameSet) (Located (Exp name)) (PostRn name NameSet)
+
+type LRuleBndr name = Located (RuleBndr name)
+
+data RuleBndr name = RuleBndr (Located name)
+                   | RuleBndrSig (Located name) (LSigWcType name)
+
+type LVectDecl name = Located (VectDecl name)
+
+data VectDecl name = Vect SourceText (Located name)
+                            (LExp name)
+                   | NoVect SourceText (Located name)
+                   | VectTypeIn SourceText Bool (Located name)
+                                  (Maybe (Located name))
+                   | VectTypeOut Bool TyCon (Maybe TyCon)
+                   | VectClassIn SourceText (Located name)
+                   | VectClassOut Class
+                   | VectInstIn (LSigType name)
+                   | VectInstOut ClsInst
+
+type LDocDecl = Located (DocDecl)
+
+data DocDecl = DocCommentNext DocString
+             | DocCommentPrev DocString
+             | DocCommentNamed String DocString
+             | DocGroup Int DocString
+
+type LWarnDecls name = Located (WarnDecls name)
+
+data WarnDecls name = Warnings{wd_src :: SourceText,
+                               wd_warnings :: [LWarnDecl name]}
+
+type LWarnDecl name = Located (WarnDecl name)
+
+data WarnDecl name = Warning [Located name] WarningTxt
+
+type LAnnDecl name = Located (AnnDecl name)
+
+data AnnDecl name = Annotation SourceText (AnnProvenance name)
+                                 (Located (Exp name))
+
+data AnnProvenance name = ValueAnnProvenance (Located name)
+                        | TypeAnnProvenance (Located name)
+                        | ModuleAnnProvenance
+
+type LRoleAnnotDecl name = Located (RoleAnnotDecl name)
+
+data RoleAnnotDecl name = RoleAnnotDecl (Located name)
+                                        [Located (Maybe Role)]
