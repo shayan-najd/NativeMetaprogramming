@@ -6,8 +6,6 @@ module HsDoc (
   ppr_mbDoc
   ) where
 
-#include "HsVersions.h"
-
 import Outputable
 import SrcLoc
 import FastString
@@ -25,4 +23,3 @@ instance Outputable HsDocString where
 ppr_mbDoc :: Maybe LHsDocString -> SDoc
 ppr_mbDoc (Just doc) = ppr doc
 ppr_mbDoc Nothing    = empty
-
