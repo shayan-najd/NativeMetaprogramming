@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Exp where
+module Syntax where
 
 data TCRType
 type TCRKind = TCRType
@@ -727,13 +727,13 @@ data Decl id = TyClD (TyClDecl id)
                | DocD (DocDecl)
                | RoleAnnotD (RoleAnnotDecl id)
 
-data Group id = Group{hs_valds :: ValBinds id,
-                          hs_splcds :: [LSpliceDecl id], hs_tyclds :: [TyClGroup id],
-                          hs_derivds :: [LDerivDecl id], hs_fixds :: [LFixitySig id],
-                          hs_defds :: [LDefaultDecl id], hs_fords :: [LForeignDecl id],
-                          hs_warnds :: [LWarnDecls id], hs_annds :: [LAnnDecl id],
-                          hs_ruleds :: [LRuleDecls id], hs_vects :: [LVectDecl id],
-                          hs_docs :: [LDocDecl]}
+data Group id = Group {hs_valds :: ValBinds id,
+                       hs_splcds :: [LSpliceDecl id], hs_tyclds :: [TyClGroup id],
+                       hs_derivds :: [LDerivDecl id], hs_fixds :: [LFixitySig id],
+                       hs_defds :: [LDefaultDecl id], hs_fords :: [LForeignDecl id],
+                       hs_warnds :: [LWarnDecls id], hs_annds :: [LAnnDecl id],
+                       hs_ruleds :: [LRuleDecls id], hs_vects :: [LVectDecl id],
+                       hs_docs :: [LDocDecl]}
 
 data SpliceExplicitFlag = ExplicitSplice
                         | ImplicitSplice
