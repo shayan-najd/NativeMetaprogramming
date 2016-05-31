@@ -22,20 +22,24 @@ data Boxity
 data Type
 data LocalBinds a
 data ConLike
-data LRecUpdField a
 data LSigWcType a
 data SourceText
 data StringLiteral
 data Tickish a
-data RecFields a b
 data Origin
-data LPat a
 data LType a
 data LocalBindsLR a b
 data SrcSpan
 data LDecl a
 data Group a
 class OutputableBndr a
+
+data FieldOcc a
+data TyVar
+data EvVar
+data TcEvBinds
+data ConDetails a b
+
 
 data Lit
   = Char          SourceText Char
@@ -64,7 +68,6 @@ data OverLitVal
   = Integral   !SourceText !Integer
   | Fractional !FractionalLit
   | IsString   !SourceText !FastString
-
 
 type LExp id = Located (Exp id)
 
@@ -502,3 +505,58 @@ data StmtContext id
   | PatGuard (MatchContext id)
   | ParStmtCtxt (StmtContext id)
   | TransStmtCtxt (StmtContext id)
+
+-------------------------------------------------------------------------------
+-- Pat
+
+type InPat id = LPat id
+
+type OutPat id = LPat id
+
+type LPat id = Located (Pat id)
+
+data Pat id = WildPat (PostTc id Type)
+            | VarPat (Located id)
+            | LazyPat (LPat id)
+            | AsPat (Located id) (LPat id)
+            | ParPat (LPat id)
+            | BangPat (LPat id)
+            | ListPat [LPat id] (PostTc id Type)
+                      (Maybe (PostTc id Type, SyntaxExp id))
+            | TuplePat [LPat id] Boxity [PostTc id Type]
+            | PArrPat [LPat id] (PostTc id Type)
+            | ConPatIn (Located id) (ConPatDetails id)
+            | ConPatOut{pat_con :: Located ConLike, pat_arg_tys :: [Type],
+                        pat_tvs :: [TyVar], pat_dicts :: [EvVar], pat_binds :: TcEvBinds,
+                        pat_args :: ConPatDetails id, pat_wrap :: Wrapper}
+            | ViewPat (LExp id) (LPat id) (PostTc id Type)
+            | SplicePat (Splice id)
+            | LitPat Lit
+            | NPat (Located (OverLit id)) (Maybe (SyntaxExp id))
+                   (SyntaxExp id) (PostTc id Type)
+            | NPlusKPat (Located id) (Located (OverLit id)) (OverLit id)
+                        (SyntaxExp id) (SyntaxExp id) (PostTc id Type)
+            | SigPatIn (LPat id) (LSigWcType id)
+            | SigPatOut (LPat id) Type
+            | CoPat Wrapper (Pat id) Type
+
+type ConPatDetails id =
+     ConDetails (LPat id) (RecFields id (LPat id))
+
+data RecFields id arg = RecFields{rec_flds ::
+                                      [LRecField id arg],
+                                      rec_dotdot :: Maybe Int}
+
+type LRecField' id arg = Located (RecField' id arg)
+
+type LRecField id arg = Located (RecField id arg)
+
+type LRecUpdField id = Located (RecUpdField id)
+
+type RecField id arg = RecField' (FieldOcc id) arg
+
+type RecUpdField id =
+     RecField' (AmbiguousFieldOcc id) (LExp id)
+
+data RecField' id arg = RecField{hsRecFieldLbl :: Located id,
+                                     hsRecFieldArg :: arg, hsRecPun :: Bool}
