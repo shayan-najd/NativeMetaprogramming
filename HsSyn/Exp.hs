@@ -33,13 +33,13 @@ data SrcSpan
 data LDecl a
 data Group a
 class OutputableBndr a
-
 data FieldOcc a
 data TyVar
 data EvVar
 data TcEvBinds
 data ConDetails a b
-
+data ModuleName
+data FieldLbl a
 
 data Lit
   = Char          SourceText Char
@@ -568,3 +568,35 @@ data RecField' id arg = RecField{hsRecFieldLbl :: Located id,
 newtype HsDocString = HsDocString FastString
 
 type LHsDocString = Located HsDocString
+
+--------------------------------------------------------------------------------
+-- ImpExp
+
+
+type LImportDecl name = Located (ImportDecl name)
+
+data ImportDecl name = ImportDecl{ideclSourceSrc ::
+                                  Maybe SourceText,
+                                  ideclName :: Located ModuleName,
+                                  ideclPkgQual :: Maybe StringLiteral, ideclSource :: Bool,
+                                  ideclSafe :: Bool, ideclQualified :: Bool, ideclImplicit :: Bool,
+                                  ideclAs :: Maybe ModuleName,
+                                        ideclHiding    :: Maybe (Bool, Located [LIE name])
+
+    }
+
+
+type LIE name = Located (IE name)
+
+data IE name = IEVar (Located name)
+             | IEThingAbs (Located name)
+             | IEThingAll (Located name)
+             | IEThingWith (Located name) IEWildcard [Located name]
+                           [Located (FieldLbl name)]
+             | IEModuleContents (Located ModuleName)
+             | IEGroup Int HsDocString
+             | IEDoc HsDocString
+             | IEDocNamed String
+
+data IEWildcard = NoIEWildcard
+                | IEWildcard Int
