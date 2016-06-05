@@ -124,24 +124,49 @@ data Exp l
 -- Wrap     (missing?)
 
 data Pat l
-  = PVar        l (Name l)
+  = PWildCard   l
+
+  | PVar        l (Name l)
+
   | PLit        l (Sign l) (Literal l)
+--  NPat
+--  ...
+
   | PNPlusK     l (Name l) Integer
-  | PInfixApp   l (Pat l) (QName l) (Pat l)
-  | PApp        l (QName l) [Pat l]
+-- ...
+
   | PTuple      l Boxed [Pat l]
+
   | PList       l [Pat l]
+-- ...
+
   | PParen      l (Pat l)
-  | PRec        l (QName l) [PatField l]
+
   | PAsPat      l (Name l) (Pat l)
-  | PWildCard   l
-  | PIrrPat     l (Pat l)
-  | PatTypeSig  l (Pat l) (Type l)
+
   | PViewPat    l (Exp l) (Pat l)
-  | PQuasiQuote l String String
+
   | PBangPat    l (Pat l)
 
+  | PIrrPat     l (Pat l)
+
+  | PatTypeSig  l (Pat l) (Type l)
+--  SigPatOut
+
+--  PArrPat
+
+  | PApp        l (QName l) [Pat l]
+--  ConPatOut
+--   ...
+  | PRec        l (QName l) [PatField l]
+  | PInfixApp   l (Pat l) (QName l) (Pat l)
+
+  | PQuasiQuote l String String
+
+-- CoPat
+
   | PRPat       l [RPat l]
+
   | PXTag       l (XName l) [PXAttr l] (Maybe (Pat l)) [Pat l]
   | PXETag      l (XName l) [PXAttr l] (Maybe (Pat l))
   | PXPcdata    l String
