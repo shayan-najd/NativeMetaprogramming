@@ -132,6 +132,36 @@ data Exp id
   | Wrap      Wrapper (Exp id)
 
 
+data Pat id
+  = WildPat   (PostTc id TCRType)
+  | VarPat    (Located id)
+  | LazyPat   (LPat id)
+  | AsPat     (Located id) (LPat id)
+  | ParPat    (LPat id)
+  | BangPat   (LPat id)
+  | ListPat   [LPat id] (PostTc id TCRType) (Maybe (PostTc id TCRType, SyntaxExp id))
+  | TuplePat  [LPat id] Boxity [PostTc id TCRType]
+  | PArrPat   [LPat id] (PostTc id TCRType)
+  | ConPatIn  (Located id) (ConPatDetails id)
+  | ConPatOut { pat_con :: Located ConLike
+              , pat_arg_tys :: [TCRType]
+              , pat_tvs :: [TyVar]
+              , pat_dicts :: [EvVar]
+              , pat_binds :: TcEvBinds
+              , pat_args :: ConPatDetails id
+              , pat_wrap :: Wrapper}
+  | ViewPat   (LExp id) (LPat id) (PostTc id TCRType)
+  | SplicePat (Splice id)
+  | LitPat    Lit
+  | NPat      (Located (OverLit id))
+              (Maybe (SyntaxExp id))  (SyntaxExp id) (PostTc id TCRType)
+  | NPlusKPat (Located id) (Located (OverLit id)) (OverLit id) (SyntaxExp id)
+              (SyntaxExp id) (PostTc id TCRType)
+  | SigPatIn  (LPat id) (LSigWcType id)
+  | SigPatOut (LPat id) TCRType
+  | CoPat     Wrapper (Pat id) TCRType
+
+
 data TCRType
 type TCRKind = TCRType
 data FractionalLit
@@ -497,30 +527,6 @@ type OutPat id = LPat id
 
 type LPat id = Located (Pat id)
 
-data Pat id = WildPat (PostTc id TCRType)
-            | VarPat (Located id)
-            | LazyPat (LPat id)
-            | AsPat (Located id) (LPat id)
-            | ParPat (LPat id)
-            | BangPat (LPat id)
-            | ListPat [LPat id] (PostTc id TCRType)
-                      (Maybe (PostTc id TCRType, SyntaxExp id))
-            | TuplePat [LPat id] Boxity [PostTc id TCRType]
-            | PArrPat [LPat id] (PostTc id TCRType)
-            | ConPatIn (Located id) (ConPatDetails id)
-            | ConPatOut{pat_con :: Located ConLike, pat_arg_tys :: [TCRType],
-                        pat_tvs :: [TyVar], pat_dicts :: [EvVar], pat_binds :: TcEvBinds,
-                        pat_args :: ConPatDetails id, pat_wrap :: Wrapper}
-            | ViewPat (LExp id) (LPat id) (PostTc id TCRType)
-            | SplicePat (Splice id)
-            | LitPat Lit
-            | NPat (Located (OverLit id)) (Maybe (SyntaxExp id))
-                   (SyntaxExp id) (PostTc id TCRType)
-            | NPlusKPat (Located id) (Located (OverLit id)) (OverLit id)
-                        (SyntaxExp id) (SyntaxExp id) (PostTc id TCRType)
-            | SigPatIn (LPat id) (LSigWcType id)
-            | SigPatOut (LPat id) TCRType
-            | CoPat Wrapper (Pat id) TCRType
 
 type ConPatDetails id =
      ConDetails (LPat id) (RecFields id (LPat id))
