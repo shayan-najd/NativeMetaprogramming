@@ -123,32 +123,59 @@ data Exp id
 
   | Wrap      Wrapper (Exp id)
 
-
 data Pat id
   = WildPat   (PostTc id TCRType)
+
   | VarPat    (Located id)
-  | LazyPat   (LPat id)
-  | AsPat     (Located id) (LPat id)
-  | ParPat    (LPat id)
-  | BangPat   (LPat id)
-  | ListPat   [LPat id] (PostTc id TCRType) (Maybe (PostTc id TCRType, SyntaxExp id))
-  | TuplePat  [LPat id] Boxity [PostTc id TCRType]
-  | PArrPat   [LPat id] (PostTc id TCRType)
-  | ConPatIn  (Located id) (ConPatDetails id)
-  | ConPatOut (Located ConLike) [TCRType] [TyVar] [EvVar] TcEvBinds (ConPatDetails id)
-              Wrapper
-  | ViewPat   (LExp id) (LPat id) (PostTc id TCRType)
-  | SplicePat (Splice id)
+
   | LitPat    Lit
   | NPat      (Located (OverLit id))
               (Maybe (SyntaxExp id))  (SyntaxExp id) (PostTc id TCRType)
+
   | NPlusKPat (Located id) (Located (OverLit id)) (OverLit id) (SyntaxExp id)
               (SyntaxExp id) (PostTc id TCRType)
+
+  | TuplePat  [LPat id] Boxity [PostTc id TCRType]
+
+  | ListPat   [LPat id] (PostTc id TCRType)
+              (Maybe (PostTc id TCRType, SyntaxExp id))
+
+  | ParPat    (LPat id)
+
+  | AsPat     (Located id) (LPat id)
+
+  | ViewPat   (LExp id) (LPat id) (PostTc id TCRType)
+
+  | BangPat   (LPat id)
+
+  | LazyPat   (LPat id)
+
   | SigPatIn  (LPat id) (LSigWcType id)
   | SigPatOut (LPat id) TCRType
+
+  | PArrPat   [LPat id] (PostTc id TCRType)
+
+  | ConPatIn  (Located id) (ConPatDetails id)
+  | ConPatOut (Located ConLike) [TCRType] [TyVar] [EvVar] TcEvBinds
+              (ConPatDetails id) Wrapper
+--  PRec
+--  PInfixApp
+
+  | SplicePat (Splice id)
+
   | CoPat     Wrapper (Pat id) TCRType
 
+--  HSE Regex stuff missing from GHC
 
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+
+
+
+------------ the rest is not compared -------------
 data TCRType
 type TCRKind = TCRType
 data FractionalLit
