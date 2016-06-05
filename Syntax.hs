@@ -1,7 +1,136 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
-
 module Syntax where
+
+data Exp id
+  = Var      (Located id)
+  | UnboundVar UnboundVar
+-- Con
+
+  | Lit      Lit
+  | OverLit  (OverLit id)
+
+  | App      (LExp id) (LExp id)
+
+  | SectionL (LExp id) (LExp id)
+
+  | SectionR (LExp id) (LExp id)
+
+  | NegApp   (LExp id) (SyntaxExp id)
+
+  | OpApp    (LExp id) (LExp id) (PostRn id Fixity) (LExp id)
+
+  | AppType    (LExp id) (LWcType id)
+  | AppTypeOut (LExp id) (LWcType Name)
+
+  | Par      (LExp id)
+
+  | If       (Maybe (SyntaxExp id)) (LExp id) (LExp id) (LExp id)
+
+  | MultiIf  (PostTc id TCRType) [LGRHS id (LExp id)]
+
+  | Case     (LExp id) (MatchGroup id (LExp id))
+
+  | Lam      (MatchGroup id (LExp id))
+
+  | LamCase  (MatchGroup id (LExp id))
+
+  | Let      (Located (LocalBinds id)) (LExp  id)
+
+  | IPVar    IPName
+
+  | RecFld (AmbiguousFieldOcc id)
+
+  | OverLabel FastString
+
+  | RecordCon { rcon_con_name :: Located id
+              , rcon_con_like :: PostTc id ConLike
+              , rcon_con_expr :: PostTcExp
+              , rcon_flds     :: RecordBinds id }
+
+  | RecordUpd { rupd_expr :: LExp id
+              , rupd_flds :: [LRecUpdField id]
+              , rupd_cons :: PostTc id [ConLike]
+              , rupd_in_tys  :: PostTc id [TCRType]
+              , rupd_out_tys :: PostTc id [TCRType]
+              , rupd_wrap :: PostTc id Wrapper
+              }
+
+  | ExplicitTuple [LTupArg id] Boxity
+--  TupleSection
+
+  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp id)) [LExp id]
+
+  | ExplicitPArr (PostTc id TCRType) [LExp id]
+
+  | ArithSeq  PostTcExp (Maybe (SyntaxExp id)) (ArithSeqInfo id)
+--  EnumFromTo      (part of ArithSeqInfo)
+--  EnumFromThen    (part of ArithSeqInfo)
+--  EnumFromThenTo  (part of ArithSeqInfo)
+
+  | PArrSeq   PostTcExp (ArithSeqInfo id)
+--  ParArrayFromTo      (part of ArithSeqInfo)
+--  ParArrayFromThen    (part of ArithSeqInfo)
+--  ParArrayFromThenTo  (part of ArithSeqInfo)
+
+-- ListComp      (part of StmtContext)
+-- MonadComp     (part of StmtContext)
+-- ParArrayComp  (part of StmtContext)
+  | Do           (StmtContext Name) (Located [ExpLStmt id]) (PostTc id TCRType)
+-- MDo           (part of StmtContext)
+-- ArrowExp      (part of StmtContext)
+-- GhciStmtCtxt  (part of StmtContext)
+-- PatGuard      (part of StmtContext)
+-- ParComp       (part of StmtContext)
+-- TransStmtCtxt (part of StmtContext)
+
+  | Bracket      (Bracket id)
+  | RnBracketOut (Bracket Name) [PendingRnSplice]
+  | TcBracketOut (Bracket Name) [PendingTcSplice]
+--  QuasiQuote
+
+--  VarQuote
+--  TypQuote
+
+  | SpliceE  (Splice id)
+
+  | ExpWithTySig (LExp id) (LSigWcType id)
+  | ExpWithTySigOut (LExp id) (LSigWcType Name)
+
+  | CoreAnn   SourceText StringLiteral (LExp id)
+  | SCC       SourceText StringLiteral (LExp id)
+  | TickPragma SourceText (StringLiteral,(Int,Int),(Int,Int))
+               ((SourceText,SourceText),(SourceText,SourceText))
+               (LExp id) -- (is it GenPragma?)
+
+  | Proc      (LPat id) (LCmdTop id)
+
+  | ArrApp    (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
+--  LeftArrHighApp (don't know how they compare)
+  | ArrForm   (LExp id) (Maybe Fixity) [LCmdTop id]
+--  RightArrHighApp (don't know how they compare)
+
+  | EWildPat -- (right comparison?)
+
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+--  HSE XML stuff missing from GHC
+
+  | Static    (LExp id)
+
+  | Tick      (Tickish id) (LExp id)
+
+  | BinTick   Int Int (LExp id)
+
+  | EAsPat    (Located id) (LExp id)
+
+  | EViewPat  (LExp id) (LExp id)
+
+  | ELazyPat  (LExp id)
+
+  | Wrap      Wrapper (Exp id)
+
 
 data TCRType
 type TCRKind = TCRType
@@ -99,168 +228,7 @@ data UnboundVar
   = OutOfScope OccName GlobalRdrEnv
   | TrueExpHole OccName
 
-data Exp id
-  = Var     (Located id)
 
-  | UnboundVar UnboundVar
-
-  | RecFld (AmbiguousFieldOcc id)
-  | OverLabel FastString
-  | IPVar   IPName
-  | OverLit (OverLit id)
-  | Lit     Lit
-  | Lam     (MatchGroup id (LExp id))
-
-  | LamCase (MatchGroup id (LExp id))
-
-  | App     (LExp id) (LExp id)
-  | AppType (LExp id) (LWcType id)
-
-  | AppTypeOut (LExp id) (LWcType Name)
-
-  | OpApp       (LExp id)
-                (LExp id)
-                (PostRn id Fixity)
-                (LExp id)
-
-  | NegApp      (LExp id)
-                (SyntaxExp id)
-
-  | Par       (LExp id)
-  | SectionL    (LExp id)
-                (LExp id)
-  | SectionR    (LExp id)
-                (LExp id)
-
-  | ExplicitTuple
-        [LTupArg id]
-        Boxity
-
-  | Case      (LExp id)
-                (MatchGroup id (LExp id))
-
-  | If        (Maybe (SyntaxExp id))
-
-                (LExp id)
-                (LExp id)
-                (LExp id)
-
-  | MultiIf   (PostTc id TCRType) [LGRHS id (LExp id)]
-
-  | Let       (Located (LocalBinds id))
-                (LExp  id)
-
-  | Do        (StmtContext Name)
-
-                (Located [ExpLStmt id])
-                (PostTc id TCRType)
-
-  | ExplicitList
-                (PostTc id TCRType)
-                (Maybe (SyntaxExp id))
-                [LExp id]
-
-  | ExplicitPArr
-                (PostTc id TCRType)
-                [LExp id]
-
-  | RecordCon
-      { rcon_con_name :: Located id
-      , rcon_con_like :: PostTc id ConLike
-      , rcon_con_expr :: PostTcExp
-      , rcon_flds     :: RecordBinds id }
-
-  | RecordUpd
-      { rupd_expr :: LExp id
-      , rupd_flds :: [LRecUpdField id]
-      , rupd_cons :: PostTc id [ConLike]
-
-      , rupd_in_tys  :: PostTc id [TCRType]
-      , rupd_out_tys :: PostTc id [TCRType]
-
-      , rupd_wrap :: PostTc id Wrapper
-      }
-
-  | ExpWithTySig
-                (LExp id)
-                (LSigWcType id)
-  | ExpWithTySigOut
-                (LExp id)
-                (LSigWcType Name)
-
-  | ArithSeq
-                PostTcExp
-                (Maybe (SyntaxExp id))
-                (ArithSeqInfo id)
-
-  | PArrSeq
-                PostTcExp
-                (ArithSeqInfo id)
-
-  | SCC       SourceText
-                StringLiteral
-                (LExp id)
-
-  | CoreAnn   SourceText
-                StringLiteral
-                (LExp id)
-
-  | Bracket    (Bracket id)
-
-  | RnBracketOut
-      (Bracket Name)
-      [PendingRnSplice]
-  | TcBracketOut
-      (Bracket Name)
-      [PendingTcSplice]
-
-  | SpliceE  (Splice id)
-
-  | Proc      (LPat id)
-                (LCmdTop id)
-
-  | Static    (LExp id)
-
-  | ArrApp
-        (LExp id)
-        (LExp id)
-        (PostTc id TCRType)
-        ArrAppType
-        Bool
-
-  | ArrForm
-        (LExp id)
-
-        (Maybe Fixity)
-        [LCmdTop id]
-
-  | Tick
-     (Tickish id)
-     (LExp id)
-  | BinTick
-     Int
-     Int
-     (LExp id)
-
-  | TickPragma
-     SourceText
-     (StringLiteral,(Int,Int),(Int,Int))
-     ((SourceText,SourceText),(SourceText,SourceText))
-
-     (LExp id)
-
-  | EWildPat
-
-  | EAsPat      (Located id)
-                (LExp id)
-
-  | EViewPat    (LExp id)
-                (LExp id)
-
-  | ELazyPat    (LExp id)
-
-  |  Wrap     Wrapper
-                (Exp id)
 type LTupArg id = Located (TupArg id)
 
 data TupArg id
