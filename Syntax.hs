@@ -173,6 +173,32 @@ data Pat l
   | PXPatTag    l (Pat l)
   | PXRPats     l [RPat l]
 
+data Literal l
+  = Char       l Char     String
+
+  | PrimChar   l Char     String
+
+  | String     l String   String
+
+  | PrimString l String   String
+
+  | Int        l Integer  String
+
+  | PrimInt    l Integer  String
+
+  | PrimWord   l Integer  String
+
+--  Int64Prim  (missing?)
+
+--  Word64Prim (missing?)
+
+--  Integer    (?)
+
+  | Frac       l Rational String
+
+  | PrimFloat  l Rational String
+
+  | PrimDouble l Rational String
 
 
 ------------ the rest is not compared -------------
@@ -504,17 +530,6 @@ data Asst l
         | ParenA l (Asst l)
         | WildCardA l (Maybe (Name l))
 
-data Literal l
-    = Char       l Char     String
-    | String     l String   String
-    | Int        l Integer  String
-    | Frac       l Rational String
-    | PrimInt    l Integer  String
-    | PrimWord   l Integer  String
-    | PrimFloat  l Rational String
-    | PrimDouble l Rational String
-    | PrimChar   l Char     String
-    | PrimString l String   String
 
 data Sign l
     = Signless l
