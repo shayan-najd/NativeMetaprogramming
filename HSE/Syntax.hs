@@ -103,12 +103,6 @@ data Exp l
 
   | ExprHole l
 
-  | XTag l (XName l) [XAttr l] (Maybe (Exp l)) [Exp l]
-  | XETag l (XName l) [XAttr l] (Maybe (Exp l))
-  | XPcdata l String
-  | XExpTag l (Exp l)
-  | XChildTag l [Exp l]
-
 -- Static   (missing?)
 
 -- Tick     (missing?)
@@ -164,14 +158,6 @@ data Pat l
   | PQuasiQuote l String String
 
 -- CoPat
-
-  | PRPat       l [RPat l]
-
-  | PXTag       l (XName l) [PXAttr l] (Maybe (Pat l)) [Pat l]
-  | PXETag      l (XName l) [PXAttr l] (Maybe (Pat l))
-  | PXPcdata    l String
-  | PXPatTag    l (Pat l)
-  | PXRPats     l [RPat l]
 
 data Literal l
   = Char       l Char     String
@@ -240,11 +226,6 @@ data CName l
 
 data Module l
   = Module  l (Maybe (ModuleHead l)) [ModulePragma l] [ImportDecl l] [Decl l]
-  | XmlPage l (ModuleName l) [ModulePragma l] (XName l) [XAttr l]
-              (Maybe (Exp l)) [Exp l]
-  | XmlHybrid l (Maybe (ModuleHead l)) [ModulePragma l] [ImportDecl l] [Decl l]
-                (XName l) [XAttr l] (Maybe (Exp l)) [Exp l]
-
 
 data ModuleHead l
   = ModuleHead l (ModuleName l) (Maybe (WarningText l))
@@ -338,12 +319,11 @@ data Annotation l
   | TypeAnn   l (Name l) (Exp l)
   | ModuleAnn l (Exp l)
 
-
 data BooleanFormula l
-    = VarFormula   l (Name l)
-    | AndFormula   l [BooleanFormula l]
-    | OrFormula    l [BooleanFormula l]
-    | ParenFormula l (BooleanFormula l)
+  = VarFormula   l (Name l)
+  | AndFormula   l [BooleanFormula l]
+  | OrFormula    l [BooleanFormula l]
+  | ParenFormula l (BooleanFormula l)
 
 data Role l
   = Nominal          l
@@ -490,13 +470,6 @@ data Sign l
   = Signless l
   | Negative l
 
-data XName l
-  = XName    l String
-  | XDomName l String String
-
-data XAttr l
-  = XAttr l (XName l) (Exp l)
-
 data Bracket l
   = ExpBracket  l (Exp l)
   | PatBracket  l (Pat l)
@@ -554,27 +527,6 @@ data RuleVar l
 data WarningText l
   = DeprText l String
   | WarnText l String
-
-data PXAttr l
-  = PXAttr l (XName l) (Pat l)
-
-data RPatOp l
-  = RPStar  l
-  | RPStarG l
-  | RPPlus  l
-  | RPPlusG l
-  | RPOpt   l
-  | RPOptG  l
-
-data RPat l
-  = RPOp     l (RPat l) (RPatOp l)
-  | RPEither l (RPat l) (RPat l)
-  | RPSeq    l [RPat l]
-  | RPGuard  l (Pat l) [Stmt l]
-  | RPCAs    l (Name l) (RPat l)
-  | RPAs     l (Name l) (RPat l)
-  | RPParen  l (RPat l)
-  | RPPat    l (Pat l)
 
 data PatField l
   = PFieldPat l (QName l) (Pat l)

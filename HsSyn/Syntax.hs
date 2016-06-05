@@ -103,12 +103,6 @@ data Exp id
 
   | EWildPat -- (right comparison?)
 
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
-
   | Static    (LExp id)
 
   | Tick      (Tickish id) (LExp id)
@@ -164,14 +158,6 @@ data Pat id
   | SplicePat (Splice id)
 
   | CoPat     Wrapper (Pat id) TCRType
-
---  HSE Regex stuff missing from GHC
-
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
---  HSE XML stuff missing from GHC
 
 data Lit
   = Char          SourceText Char
