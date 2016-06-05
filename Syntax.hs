@@ -547,30 +547,30 @@ type LBindsLR idL idR = Bag (LBindLR idL idR)
 
 type LBindLR idL idR = Located (BindLR idL idR)
 
-data BindLR idL idR = FunBind{fun_id :: Located idL,
-                                fun_matches :: MatchGroup idR (LExp idR),
-                                fun_co_fn :: Wrapper, bind_fvs :: PostRn idL NameSet,
-                                fun_tick :: [Tickish Id]}
-                      | PatBind{pat_lhs :: LPat idL, pat_rhs :: GRHSs idR (LExp idR),
-                                pat_rhs_ty :: PostTc idR TCRType, bind_fvs :: PostRn idL NameSet,
-                                pat_ticks :: ([Tickish Id], [[Tickish Id]])}
-                      | VarBind{var_id :: idL, var_rhs :: LExp idR,
-                                var_inline :: Bool}
-                      | AbsBinds{abs_tvs :: [TyVar], abs_ev_vars :: [EvVar],
-                                 abs_exports :: [ABExport idL], abs_ev_binds :: [TcEvBinds],
-                                 abs_binds :: LBinds idL}
-                      | AbsBindsSig{abs_tvs :: [TyVar], abs_ev_vars :: [EvVar],
-                                    abs_sig_export :: idL, abs_sig_prags :: TcSpecPrags,
-                                    abs_sig_ev_bind :: TcEvBinds, abs_sig_bind :: LBind idL}
+data BindLR idL idR = FunBind (Located idL)
+                              (MatchGroup idR (LExp idR))
+                              Wrapper (PostRn idL NameSet)
+                              [Tickish Id]
+                      | PatBind (LPat idL) (GRHSs idR (LExp idR))
+                                (PostTc idR TCRType) (PostRn idL NameSet)
+                                ([Tickish Id], [[Tickish Id]])
+                      | VarBind idL (LExp idR)
+                                Bool
+                      | AbsBinds [TyVar] [EvVar]
+                                 [ABExport idL] [TcEvBinds]
+                                 (LBinds idL)
+                      | AbsBindsSig [TyVar] [EvVar]
+                                    idL TcSpecPrags
+                                    TcEvBinds (LBind idL)
                       | PatSynBind (PatSynBind idL idR)
 
-data ABExport id = ABE{abe_poly :: id, abe_mono :: id,
-                       abe_wrap :: Wrapper, abe_prags :: TcSpecPrags}
+data ABExport id = ABE id id Wrapper TcSpecPrags
 
-data PatSynBind idL idR = PSB{psb_id :: Located idL,
-                              psb_fvs :: PostRn idR NameSet,
-                              psb_args :: PatSynDetails (Located idR), psb_def :: LPat idR,
-                              psb_dir :: PatSynDir idR}
+data PatSynBind idL idR = PSB (Located idL)
+                              (PostRn idR NameSet)
+                              (PatSynDetails (Located idR))
+                              (LPat idR)
+                              (PatSynDir idR)
 
 -- IPBinds'
 data IPBinds id = IPBinds' [LIPBind id] TcEvBinds
@@ -606,9 +606,7 @@ data PatSynDetails a = InfixPatSyn a a
                        | PrefixPatSyn [a]
                        | RecordPatSyn [RecordPatSynField a]
 
-data RecordPatSynField a = RecordPatSynField{recordPatSynSelectorId
-                                             :: a,
-                                             recordPatSynPatVar :: a}
+data RecordPatSynField a = RecordPatSynField a a
 
 data PatSynDir id = Unidirectional
                     | ImplicitBidirectional
@@ -634,13 +632,14 @@ data Decl id = TyClD (TyClDecl id)
                | DocD (DocDecl)
                | RoleAnnotD (RoleAnnotDecl id)
 
-data Group id = Group {hs_valds :: ValBinds id,
-                       hs_splcds :: [LSpliceDecl id], hs_tyclds :: [TyClGroup id],
-                       hs_derivds :: [LDerivDecl id], hs_fixds :: [LFixitySig id],
-                       hs_defds :: [LDefaultDecl id], hs_fords :: [LForeignDecl id],
-                       hs_warnds :: [LWarnDecls id], hs_annds :: [LAnnDecl id],
-                       hs_ruleds :: [LRuleDecls id], hs_vects :: [LVectDecl id],
-                       hs_docs :: [LDocDecl]}
+data Group id = Group (ValBinds id)
+                      [LSpliceDecl id] [TyClGroup id]
+                      [LDerivDecl id] [LFixitySig id]
+                      [LDefaultDecl id] [LForeignDecl id]
+                      [LWarnDecls id] [LAnnDecl id]
+                      [LRuleDecls id] [LVectDecl id]
+                      [LDocDecl]
+
 
 data SpliceExplicitFlag = ExplicitSplice
                         | ImplicitSplice
@@ -652,36 +651,38 @@ data SpliceDecl id = SpliceDecl (Located (Splice id))
 
 type LTyClDecl name = Located (TyClDecl name)
 
-data TyClDecl name = FamDecl{tcdFam :: FamilyDecl name}
-                   | SynDecl{tcdLName :: Located name, tcdTyVars :: LQTyVars name,
-                             tcdRhs :: LType name, tcdFVs :: PostRn name NameSet}
-                   | DataDecl{tcdLName :: Located name, tcdTyVars :: LQTyVars name,
-                              tcdDataDefn :: DataDefn name, tcdDataCusk :: PostRn name Bool,
-                              tcdFVs :: PostRn name NameSet}
-                   | ClassDecl{tcdCtxt :: LContext name, tcdLName :: Located name,
-                               tcdTyVars :: LQTyVars name,
-                               tcdFDs :: [Located (FunDep (Located name))],
-                               tcdSigs :: [LSig name], tcdMeths :: LBinds name,
-                               tcdATs :: [LFamilyDecl name], tcdATDefs :: [LTyFamDefltEqn name],
-                               tcdDocs :: [LDocDecl], tcdFVs :: PostRn name NameSet}
+data TyClDecl name = FamDecl (FamilyDecl name)
+                   | SynDecl (Located name) (LQTyVars name)
+                             (LType name) (PostRn name NameSet)
+                   | DataDecl (Located name) (LQTyVars name)
+                              (DataDefn name) (PostRn name Bool)
+                              (PostRn name NameSet)
+                   | ClassDecl (LContext name) (Located name)
+                               (LQTyVars name)
+                               [Located (FunDep (Located name))]
+                               [LSig name] (LBinds name)
+                               [LFamilyDecl name] [LTyFamDefltEqn name]
+                               [LDocDecl] (PostRn name NameSet)
 
-data TyClGroup name = TyClGroup{group_tyclds :: [LTyClDecl name],
-                                group_roles :: [LRoleAnnotDecl name],
-                                group_instds :: [LInstDecl name]}
+data TyClGroup name
+  = TyClGroup [LTyClDecl name] [LRoleAnnotDecl name] [LInstDecl name]
 
-type LFamilyResultSig name = Located (FamilyResultSig name)
+type LFamilyResultSig name
+  = Located (FamilyResultSig name)
 
 -- KingSig --> KindSig'
-data FamilyResultSig name = NoSig
-                          | KindSig' (LKind name)
-                          | TyVarSig (LTyVarBndr name)
+data FamilyResultSig name
+  = NoSig
+  | KindSig' (LKind name)
+  | TyVarSig (LTyVarBndr name)
 
-type LFamilyDecl name = Located (FamilyDecl name)
+type LFamilyDecl name
+  = Located (FamilyDecl name)
 
-data FamilyDecl name = FamilyDecl{fdInfo :: FamilyInfo name,
-                                  fdLName :: Located name, fdTyVars :: LQTyVars name,
-                                  fdResultSig :: LFamilyResultSig name,
-                                  fdInjectivityAnn :: Maybe (LInjectivityAnn name)}
+data FamilyDecl name = FamilyDecl (FamilyInfo name)
+                                  (Located name) (LQTyVars name)
+                                  (LFamilyResultSig name)
+                                  (Maybe (LInjectivityAnn name))
 
 type LInjectivityAnn name = Located (InjectivityAnn name)
 
@@ -692,10 +693,10 @@ data FamilyInfo name = DataFamily
                      | OpenTypeFamily
                      | ClosedTypeFamily (Maybe [LTyFamInstEqn name])
 
-data DataDefn name = DataDefn{dd_ND :: NewOrData,
-                                  dd_ctxt :: LContext name, dd_cType :: Maybe (Located CType),
-                                  dd_kindSig :: Maybe (LKind name), dd_cons :: [LConDecl name],
-                                  dd_derivs :: Deriving name}
+data DataDefn name = DataDefn NewOrData
+                              (LContext name) (Maybe (Located CType))
+                              (Maybe (LKind name)) [LConDecl name]
+                              (Deriving name)
 
 type Deriving name = Maybe (Located [LSigType name])
 
@@ -704,13 +705,13 @@ data NewOrData = NewType
 
 type LConDecl name = Located (ConDecl name)
 
-data ConDecl name = ConDeclGADT{con_names :: [Located name],
-                                con_type :: LSigType name, con_doc :: Maybe LDocString}
-                  | ConDeclH98{con_name :: Located name,
-                               con_qvars :: Maybe (LQTyVars name),
-                               con_cxt :: Maybe (LContext name),
-                               con_details :: ConDeclDetails name,
-                               con_doc :: Maybe LDocString}
+data ConDecl name = ConDeclGADT [Located name]
+                                (LSigType name) (Maybe LDocString)
+                  | ConDeclH98 (Located name)
+                               (Maybe (LQTyVars name))
+                               (Maybe (LContext name))
+                               (ConDeclDetails name)
+                               (Maybe LDocString)
 
 type ConDeclDetails name =
      ConDetails (LBangType name) (Located [LConDeclField name])
@@ -725,41 +726,40 @@ type TyFamInstEqn name = TyFamEqn name (TyPats name)
 
 type TyFamDefltEqn name = TyFamEqn name (LQTyVars name)
 
-data TyFamEqn name pats = TyFamEqn{tfe_tycon :: Located name,
-                                   tfe_pats :: pats, tfe_rhs :: LType name}
+data TyFamEqn name pats = TyFamEqn (Located name)
+                                   pats
+                                   (LType name)
 
 type LTyFamInstDecl name = Located (TyFamInstDecl name)
 
-data TyFamInstDecl name = TyFamInstDecl{tfid_eqn ::
-                                        LTyFamInstEqn name,
-                                        tfid_fvs :: PostRn name NameSet}
+data TyFamInstDecl name
+  = TyFamInstDecl (LTyFamInstEqn name) (PostRn name NameSet)
 
 type LDataFamInstDecl name = Located (DataFamInstDecl name)
 
-data DataFamInstDecl name = DataFamInstDecl{dfid_tycon ::
-                                            Located name,
-                                            dfid_pats :: TyPats name,
-                                            dfid_defn :: DataDefn name,
-                                            dfid_fvs :: PostRn name NameSet}
+data DataFamInstDecl name = DataFamInstDecl (Located name)
+                                            (TyPats name)
+                                            (DataDefn name)
+                                            (PostRn name NameSet)
 
 type LClsInstDecl name = Located (ClsInstDecl name)
 
-data ClsInstDecl name = ClsInstDecl{cid_poly_ty :: LSigType name,
-                                    cid_binds :: LBinds name, cid_sigs :: [LSig name],
-                                    cid_tyfam_insts :: [LTyFamInstDecl name],
-                                    cid_datafam_insts :: [LDataFamInstDecl name],
-                                    cid_overlap_mode :: Maybe (Located OverlapMode)}
+data ClsInstDecl name = ClsInstDecl (LSigType name)
+                                    (LBinds name) [LSig name]
+                                    [LTyFamInstDecl name]
+                                    [LDataFamInstDecl name]
+                                    (Maybe (Located OverlapMode))
 
 type LInstDecl name = Located (InstDecl name)
 
-data InstDecl name = ClsInstD{cid_inst :: ClsInstDecl name}
-                   | DataFamInstD{dfid_inst :: DataFamInstDecl name}
-                   | TyFamInstD{tfid_inst :: TyFamInstDecl name}
+data InstDecl name = ClsInstD (ClsInstDecl name)
+                   | DataFamInstD (DataFamInstDecl name)
+                   | TyFamInstD (TyFamInstDecl name)
 
 type LDerivDecl name = Located (DerivDecl name)
 
-data DerivDecl name = DerivDecl{deriv_type :: LSigType name,
-                                deriv_overlap_mode :: Maybe (Located OverlapMode)}
+data DerivDecl name = DerivDecl (LSigType name)
+                                (Maybe (Located OverlapMode))
 
 type LDefaultDecl name = Located (DefaultDecl name)
 
@@ -767,12 +767,12 @@ data DefaultDecl name = DefaultDecl [LType name]
 
 type LForeignDecl name = Located (ForeignDecl name)
 
-data ForeignDecl name = ForeignImport{fd_name :: Located name,
-                                      fd_sig_ty :: LSigType name, fd_co :: PostTc name Coercion,
-                                      fd_fi :: ForeignImport}
-                      | ForeignExport{fd_name :: Located name,
-                                      fd_sig_ty :: LSigType name, fd_co :: PostTc name Coercion,
-                                      fd_fe :: ForeignExport}
+data ForeignDecl name = ForeignImport (Located name)
+                                      (LSigType name) (PostTc name Coercion)
+                                      ForeignImport
+                      | ForeignExport (Located name)
+                                      (LSigType name) (PostTc name Coercion)
+                                      ForeignExport
 
 data ForeignImport = CImport (Located CCallConv) (Located Safety)
                              (Maybe Header) CImportSpec (Located SourceText)
@@ -786,14 +786,14 @@ data ForeignExport = CExport (Located CExportSpec)
 
 type LRuleDecls name = Located (RuleDecls name)
 
-data RuleDecls name = Rules{rds_src :: SourceText,
-                              rds_rules :: [LRuleDecl name]}
+data RuleDecls name = Rules SourceText [LRuleDecl name]
 
 type LRuleDecl name = Located (RuleDecl name)
 
 data RuleDecl name = Rule (Located (SourceText, RuleName))
-                            Activation [LRuleBndr name] (Located (Exp name))
-                            (PostRn name NameSet) (Located (Exp name)) (PostRn name NameSet)
+                          Activation [LRuleBndr name] (Located (Exp name))
+                          (PostRn name NameSet) (Located (Exp name))
+                          (PostRn name NameSet)
 
 type LRuleBndr name = Located (RuleBndr name)
 
@@ -822,8 +822,8 @@ data DocDecl = DocCommentNext DocString
 
 type LWarnDecls name = Located (WarnDecls name)
 
-data WarnDecls name = Warnings{wd_src :: SourceText,
-                               wd_warnings :: [LWarnDecl name]}
+data WarnDecls name = Warnings SourceText
+                               [LWarnDecl name]
 
 type LWarnDecl name = Located (WarnDecl name)
 
@@ -862,17 +862,13 @@ type LKind name = Located (Kind name)
 
 type LTyVarBndr name = Located (TyVarBndr name)
 
-data LQTyVars name = QTvs{hsq_implicit :: PostRn name [Name],
-                              hsq_explicit :: [LTyVarBndr name],
-                              hsq_dependent :: PostRn name NameSet}
+data LQTyVars name = QTvs (PostRn name [Name])
+                          [LTyVarBndr name]
+                          (PostRn name NameSet)
 
-data ImplicitBndrs name thing = IB{hsib_vars ::
-                                       PostRn name [Name],
-                                       hsib_body :: thing}
+data ImplicitBndrs name thing = IB (PostRn name [Name]) thing
 
-data WildCardBndrs name thing = WC{hswc_wcs ::
-                                       PostRn name [Name],
-                                       hswc_ctx :: Maybe SrcSpan, hswc_body :: thing}
+data WildCardBndrs name thing = WC (PostRn name [Name]) (Maybe SrcSpan) thing
 
 type LSigType name = ImplicitBndrs name (LType name)
 
@@ -885,9 +881,8 @@ newtype IPName = IPName FastString
 data TyVarBndr name = UserTyVar (Located name)
                       | KindedTyVar (Located name) (LKind name)
 
-data Type name = ForAllTy{hst_bndrs :: [LTyVarBndr name],
-                              hst_body :: LType name}
-                 | QualTy{hst_ctxt :: LContext name, hst_body :: LType name}
+data Type name = ForAllTy [LTyVarBndr name] (LType name)
+                 | QualTy (LContext name) (LType name)
                  | TyVar (Located name)
                  | AppsTy [LAppType name]
                  | AppTy (LType name) (LType name)
@@ -929,10 +924,9 @@ data TupleSort = UnboxedTuple
 
 type LConDeclField name = Located (ConDeclField name)
 
-data ConDeclField name = ConDeclField{cd_fld_names ::
-                                      [LFieldOcc name],
-                                      cd_fld_type :: LBangType name,
-                                      cd_fld_doc :: Maybe LDocString}
+data ConDeclField name = ConDeclField [LFieldOcc name]
+                                      (LBangType name)
+                                      (Maybe LDocString)
 
 data ConDetails arg rec = PrefixCon [arg]
                           | RecCon rec
@@ -940,8 +934,8 @@ data ConDetails arg rec = PrefixCon [arg]
 
 type LFieldOcc name = Located (FieldOcc name)
 
-data FieldOcc name = FieldOcc{rdrNameFieldOcc :: Located RdrName,
-                              selectorFieldOcc :: PostRn name name}
+data FieldOcc name = FieldOcc (Located RdrName)
+                              (PostRn name name)
 
 data AmbiguousFieldOcc name = Unambiguous (Located RdrName)
                                           (PostRn name name)
