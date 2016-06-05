@@ -173,6 +173,32 @@ data Pat id
 --  HSE XML stuff missing from GHC
 --  HSE XML stuff missing from GHC
 
+data Lit
+  = Char          SourceText Char
+
+  | CharPrim      SourceText Char
+
+  | String        SourceText FastString
+
+  | StringPrim    SourceText ByteString
+
+  | Int           SourceText Integer
+
+  | IntPrim       SourceText Integer
+
+  | WordPrim      SourceText Integer
+
+  | Int64Prim     SourceText Integer
+
+  | Word64Prim    SourceText Integer
+
+  | Integer       SourceText Integer TCRType
+
+  | Rat           FractionalLit TCRType
+
+  | FloatPrim     FractionalLit
+
+  | DoublePrim    FractionalLit
 
 
 ------------ the rest is not compared -------------
@@ -228,21 +254,6 @@ data WarningTxt
 data SrcBang
 data RdrName
 
-data Lit
-  = Char          SourceText Char
-  | CharPrim      SourceText Char
-  | String        SourceText FastString
-  | StringPrim    SourceText ByteString
-  | Int           SourceText Integer
-
-  | IntPrim       SourceText Integer
-  | WordPrim      SourceText Integer
-  | Int64Prim     SourceText Integer
-  | Word64Prim    SourceText Integer
-  | Integer       SourceText Integer TCRType
-  | Rat           FractionalLit TCRType
-  | FloatPrim     FractionalLit
-  | DoublePrim    FractionalLit
 
 data OverLit id
   = OverLit' OverLitVal (PostRn id Bool) (Exp id) (PostTc id TCRType)
