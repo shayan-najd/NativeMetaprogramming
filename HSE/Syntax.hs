@@ -43,17 +43,9 @@ data Exp l
 -- OverLabel
 
   | RecConstr    l (QName l) [FieldUpdate l]
--- {
--- ...
--- }
 
   | RecUpdate    l (Exp l)   [FieldUpdate l]
--- {
 -- ...
--- ...
--- ...
--- ...
--- }
 
   | Tuple              l Boxed [Exp l]
   | TupleSection       l Boxed [Maybe (Exp l)]
@@ -223,16 +215,14 @@ data ExportSpec l
 data Namespace l = NoNamespace l | TypeNamespace l | PatternNamespace l
 
 data ImportDecl l = ImportDecl
-    { importAnn :: l
-    , importModule :: ModuleName l
-    , importQualified :: Bool
-    , importSrc :: Bool
-    , importSafe :: Bool
-    , importPkg :: Maybe String
-    , importAs :: Maybe (ModuleName l)
-    , importSpecs :: Maybe (ImportSpecList l)
-
-    }
+    l
+    (ModuleName l)
+    Bool
+    Bool
+    Bool
+    (Maybe String)
+    (Maybe (ModuleName l))
+    (Maybe (ImportSpecList l))
 
 data ImportSpecList l
     = ImportSpecList l Bool [ImportSpec l]
