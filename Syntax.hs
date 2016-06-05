@@ -131,6 +131,32 @@ data Exp l
 
 -- Wrap     (missing?)
 
+data Pat l
+  = PVar        l (Name l)
+  | PLit        l (Sign l) (Literal l)
+  | PNPlusK     l (Name l) Integer
+  | PInfixApp   l (Pat l) (QName l) (Pat l)
+  | PApp        l (QName l) [Pat l]
+  | PTuple      l Boxed [Pat l]
+  | PList       l [Pat l]
+  | PParen      l (Pat l)
+  | PRec        l (QName l) [PatField l]
+  | PAsPat      l (Name l) (Pat l)
+  | PWildCard   l
+  | PIrrPat     l (Pat l)
+  | PatTypeSig  l (Pat l) (Type l)
+  | PViewPat    l (Exp l) (Pat l)
+  | PQuasiQuote l String String
+  | PBangPat    l (Pat l)
+
+  | PRPat       l [RPat l]
+  | PXTag       l (XName l) [PXAttr l] (Maybe (Pat l)) [Pat l]
+  | PXETag      l (XName l) [PXAttr l] (Maybe (Pat l))
+  | PXPcdata    l String
+  | PXPatTag    l (Pat l)
+  | PXRPats     l [RPat l]
+
+
 
 ------------ the rest is not compared -------------
 data ModuleName l = ModuleName l String
@@ -538,31 +564,6 @@ data WarningText l
     = DeprText l String
     | WarnText l String
 
-data Pat l
-    = PVar l (Name l)
-    | PLit l (Sign l) (Literal l)
-    | PNPlusK l (Name l) Integer
-    | PInfixApp l (Pat l) (QName l) (Pat l)
-    | PApp l (QName l) [Pat l]
-    | PTuple l Boxed [Pat l]
-    | PList l [Pat l]
-    | PParen l (Pat l)
-    | PRec l (QName l) [PatField l]
-    | PAsPat l (Name l) (Pat l)
-    | PWildCard l
-    | PIrrPat l (Pat l)
-    | PatTypeSig l (Pat l) (Type l)
-    | PViewPat l (Exp l) (Pat l)
-    | PRPat l [RPat l]
-    | PXTag l (XName l) [PXAttr l] (Maybe (Pat l)) [Pat l]
-
-    | PXETag l (XName l) [PXAttr l] (Maybe (Pat l))
-
-    | PXPcdata l String
-    | PXPatTag l (Pat l)
-    | PXRPats  l [RPat l]
-    | PQuasiQuote l String String
-    | PBangPat l (Pat l)
 
 data PXAttr l = PXAttr l (XName l) (Pat l)
 
