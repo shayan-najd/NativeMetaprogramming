@@ -1,5 +1,138 @@
+
 module Syntax where
 
+data Exp l
+  = Var          l (QName l)
+--  UnboundVar
+  | Con          l (QName l)
+
+  | Lit          l (Literal l)
+--  OverLit
+
+  | App          l (Exp l) (Exp l)
+
+  | LeftSection  l (Exp l) (QOp l)
+
+  | RightSection l (QOp l) (Exp l)
+
+  | NegApp       l (Exp l)
+
+  | InfixApp     l (Exp l) (QOp l) (Exp l)
+
+-- AppType
+-- AppTypeOut
+
+  | Paren        l (Exp l)
+
+  | If           l (Exp l) (Exp l) (Exp l)
+
+  | MultiIf      l [GuardedRhs l]
+
+  | Case         l (Exp l) [Alt l]
+
+  | Lambda       l [Pat l] (Exp l)
+
+  | LCase        l [Alt l]
+
+  | Let          l (Binds l) (Exp l)
+
+  | IPVar        l (IPName l)
+
+-- RecFld
+
+-- OverLabel
+
+  | RecConstr    l (QName l) [FieldUpdate l]
+-- {
+-- ...
+-- }
+
+  | RecUpdate    l (Exp l)   [FieldUpdate l]
+-- {
+-- ...
+-- ...
+-- ...
+-- ...
+-- }
+
+  | Tuple              l Boxed [Exp l]
+  | TupleSection       l Boxed [Maybe (Exp l)]
+
+  | List               l [Exp l]
+
+  | ParArray           l [Exp l]
+
+  | EnumFrom           l (Exp l)
+  | EnumFromTo         l (Exp l) (Exp l)
+  | EnumFromThen       l (Exp l) (Exp l)
+  | EnumFromThenTo     l (Exp l) (Exp l) (Exp l)
+
+--  ParArrayFrom       (missing?)
+  | ParArrayFromTo     l (Exp l) (Exp l)
+--  ParArrayFromThen   (missing?)
+  | ParArrayFromThenTo l (Exp l) (Exp l) (Exp l)
+
+  | ListComp           l (Exp l) [QualStmt l]
+--  MonadComp          (missing? same as ListComp?)
+  | ParArrayComp       l (Exp l) [[QualStmt l]]
+  | Do                 l [Stmt l]
+  | MDo                l [Stmt l]
+--  ArrowExp            (?)
+--  GhciStmtCtxt
+--  PatGuard
+  | ParComp            l (Exp l) [[QualStmt l]]
+--  TransStmtCtxt
+
+  | BracketExp l (Bracket l)
+--  RnBracketOut
+--  TcBracketOut
+  | QuasiQuote l String String
+
+  | VarQuote l (QName l)
+  | TypQuote l (QName l)
+
+  | SpliceExp l (Splice l)
+
+  | ExpTypeSig         l (Exp l) (Type l)
+--  ExpWithTySigOut
+
+  | CorePragma l      String (Exp l)
+  | SCCPragma  l      String (Exp l)
+  | GenPragma  l      String (Int, Int) (Int, Int) (Exp l)
+--                    ...
+--                    ...
+
+  | Proc            l (Pat l) (Exp l)
+
+  | LeftArrApp      l (Exp l) (Exp l)
+  | RightArrApp     l (Exp l) (Exp l)
+  | LeftArrHighApp  l (Exp l) (Exp l)
+  | RightArrHighApp l (Exp l) (Exp l)
+
+  | ExprHole l
+
+  | XTag l (XName l) [XAttr l] (Maybe (Exp l)) [Exp l]
+  | XETag l (XName l) [XAttr l] (Maybe (Exp l))
+  | XPcdata l String
+  | XExpTag l (Exp l)
+  | XChildTag l [Exp l]
+
+-- Static   (missing?)
+
+-- Tick     (missing?)
+
+-- BinTick  (missing?)
+
+-- EAsPat   (missing?)
+
+-- EViewPat (missing?)
+
+-- ELazyPat (missing?)
+
+-- Wrap     (missing?)
+
+
+------------ the rest is not compared -------------
 data ModuleName l = ModuleName l String
 
 data SpecialCon l
@@ -345,75 +478,6 @@ data Sign l
     = Signless l
     | Negative l
 
-data Exp l
-    = Var l (QName l)
-    | IPVar l (IPName l)
-    | Con l (QName l)
-    | Lit l (Literal l)
-    | InfixApp l (Exp l) (QOp l) (Exp l)
-    | App l (Exp l) (Exp l)
-    | NegApp l (Exp l)
-    | Lambda l [Pat l] (Exp l)
-    | Let l (Binds l) (Exp l)
-    | If l (Exp l) (Exp l) (Exp l)
-    | MultiIf l [GuardedRhs l]
-    | Case l (Exp l) [Alt l]
-    | Do l [Stmt l]
-
-    | MDo l [Stmt l]
-    | Tuple l Boxed [Exp l]
-    | TupleSection l Boxed [Maybe (Exp l)]
-    | List l [Exp l]
-    | ParArray l [Exp l]
-    | Paren l (Exp l)
-    | LeftSection l (Exp l) (QOp l)
-    | RightSection l (QOp l) (Exp l)
-    | RecConstr l (QName l) [FieldUpdate l]
-    | RecUpdate l (Exp l)   [FieldUpdate l]
-    | EnumFrom l (Exp l)
-
-    | EnumFromTo l (Exp l) (Exp l)
-
-    | EnumFromThen l (Exp l) (Exp l)
-
-    | EnumFromThenTo l (Exp l) (Exp l) (Exp l)
-
-    | ParArrayFromTo l (Exp l) (Exp l)
-
-    | ParArrayFromThenTo l (Exp l) (Exp l) (Exp l)
-
-    | ListComp l (Exp l) [QualStmt l]
-    | ParComp  l (Exp l) [[QualStmt l]]
-    | ParArrayComp  l (Exp l) [[QualStmt l]]
-    | ExpTypeSig l (Exp l) (Type l)
-
-    | VarQuote l (QName l)
-    | TypQuote l (QName l)
-    | BracketExp l (Bracket l)
-    | SpliceExp l (Splice l)
-    | QuasiQuote l String String
-
-    | XTag l (XName l) [XAttr l] (Maybe (Exp l)) [Exp l]
-
-    | XETag l (XName l) [XAttr l] (Maybe (Exp l))
-
-    | XPcdata l String
-    | XExpTag l (Exp l)
-    | XChildTag l [Exp l]
-
-    | CorePragma l      String (Exp l)
-    | SCCPragma  l      String (Exp l)
-    | GenPragma  l      String (Int, Int) (Int, Int) (Exp l)
-
-    | Proc            l (Pat l) (Exp l)
-    | LeftArrApp      l (Exp l) (Exp l)
-    | RightArrApp     l (Exp l) (Exp l)
-    | LeftArrHighApp  l (Exp l) (Exp l)
-    | RightArrHighApp l (Exp l) (Exp l)
-
-    | LCase l [Alt l]
-
-    | ExprHole l
 
 data XName l
     = XName l String
