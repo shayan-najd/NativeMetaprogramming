@@ -38,22 +38,14 @@ data Exp id
 
   | IPVar    IPName
 
-  | RecFld (AmbiguousFieldOcc id)
+  | RecFld    (AmbiguousFieldOcc id)
 
   | OverLabel FastString
 
-  | RecordCon { rcon_con_name :: Located id
-              , rcon_con_like :: PostTc id ConLike
-              , rcon_con_expr :: PostTcExp
-              , rcon_flds     :: RecordBinds id }
+  | RecordCon (Located id) (PostTc id ConLike) PostTcExp (RecordBinds id)
 
-  | RecordUpd { rupd_expr :: LExp id
-              , rupd_flds :: [LRecUpdField id]
-              , rupd_cons :: PostTc id [ConLike]
-              , rupd_in_tys  :: PostTc id [TCRType]
-              , rupd_out_tys :: PostTc id [TCRType]
-              , rupd_wrap :: PostTc id Wrapper
-              }
+  | RecordUpd (LExp id) [LRecUpdField id] (PostTc id [ConLike])
+              (PostTc id [TCRType]) (PostTc id [TCRType]) (PostTc id Wrapper)
 
   | ExplicitTuple [LTupArg id] Boxity
 --  TupleSection
@@ -143,13 +135,8 @@ data Pat id
   | TuplePat  [LPat id] Boxity [PostTc id TCRType]
   | PArrPat   [LPat id] (PostTc id TCRType)
   | ConPatIn  (Located id) (ConPatDetails id)
-  | ConPatOut { pat_con :: Located ConLike
-              , pat_arg_tys :: [TCRType]
-              , pat_tvs :: [TyVar]
-              , pat_dicts :: [EvVar]
-              , pat_binds :: TcEvBinds
-              , pat_args :: ConPatDetails id
-              , pat_wrap :: Wrapper}
+  | ConPatOut (Located ConLike) [TCRType] [TyVar] [EvVar] TcEvBinds (ConPatDetails id)
+              Wrapper
   | ViewPat   (LExp id) (LPat id) (PostTc id TCRType)
   | SplicePat (Splice id)
   | LitPat    Lit
@@ -231,11 +218,7 @@ data Lit
   | DoublePrim    FractionalLit
 
 data OverLit id
-  = OverLit' {
-        ol_val :: OverLitVal,
-        ol_rebindable :: PostRn id Bool,
-        ol_witness :: Exp id,
-        ol_type :: PostTc id TCRType }
+  = OverLit' OverLitVal (PostRn id Bool) (Exp id) (PostTc id TCRType)
 
 data OverLitVal
   = Integral   !SourceText !Integer
@@ -248,9 +231,7 @@ type PostTcExp  = Exp Id
 
 type PostTcTable = [(Name, PostTcExp)]
 
-data SyntaxExp id = SyntaxExp { syn_expr      :: Exp id
-                                , syn_arg_wraps :: [Wrapper]
-                                , syn_res_wrap  :: Wrapper }
+data SyntaxExp id = SyntaxExp (Exp id) [Wrapper] Wrapper
 
 type CmdSyntaxTable id = [(Name, Exp id)]
 
@@ -318,21 +299,12 @@ data CmdTop id
 type RecordBinds id = RecFields id (LExp id)
 
 data MatchGroup id body
-  = MG { mg_alts    :: Located [LMatch id body]
-       , mg_arg_tys :: [PostTc id TCRType]
-       , mg_res_ty  :: PostTc id TCRType
-       , mg_origin  :: Origin }
+  = MG (Located [LMatch id body]) [PostTc id TCRType] (PostTc id TCRType) Origin
 
 type LMatch id body = Located (Match id body)
 
 data Match id body
-  = Match {
-        m_fixity :: MatchFixity id,
-        m_pats :: [LPat id],
-        m_type :: (Maybe (LType id)),
-
-        m_grhss :: (GRHSs id body)
-  }
+  = Match (MatchFixity id) [LPat id] (Maybe (LType id)) (GRHSs id body)
 
 data MatchFixity id
   = NonFunBindMatch
@@ -340,10 +312,8 @@ data MatchFixity id
                  Bool
 
 data GRHSs id body
-  = GRHSs {
-      grhssGRHSs :: [LGRHS id body],
-      grhssLocalBinds :: Located (LocalBinds id)
-    }
+  = GRHSs [LGRHS id body] (Located (LocalBinds id))
+
 
 type LGRHS id body = Located (GRHS id body)
 
@@ -393,39 +363,12 @@ data StmtLR idL idR body
              (SyntaxExp idR)
              (PostTc idR TCRType)
 
-  | TransStmt {
-      trS_form  :: TransForm,
-      trS_stmts :: [ExpLStmt idL],
+  | TransStmt TransForm [ExpLStmt idL] [(idR, idR)] (LExp idR) (Maybe (LExp idR))
+              (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType) (Exp idR)
 
-      trS_bndrs :: [(idR, idR)],
-      trS_using :: LExp idR,
-      trS_by :: Maybe (LExp idR),
-
-      trS_ret :: SyntaxExp idR,
-      trS_bind :: SyntaxExp idR,
-      trS_bind_arg_ty :: PostTc idR TCRType,
-      trS_fmap :: Exp idR
-
-    }
-
-  | RecStmt
-     { recS_stmts :: [LStmtLR idL idR body]
-
-     , recS_later_ids :: [idR]
-
-     , recS_rec_ids :: [idR]
-
-     , recS_bind_fn :: SyntaxExp idR
-     , recS_ret_fn  :: SyntaxExp idR
-     , recS_mfix_fn :: SyntaxExp idR
-     , recS_bind_ty :: PostTc idR TCRType
-
-     , recS_later_rets :: [PostTcExp]
-     , recS_rec_rets :: [PostTcExp]
-
-      , recS_ret_ty :: PostTc idR TCRType
-
-      }
+  | RecStmt [LStmtLR idL idR body] [idR] [idR] (SyntaxExp idR)
+            (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType)
+            [PostTcExp] [PostTcExp] (PostTc idR TCRType)
 
 data TransForm
   = ThenForm
@@ -527,13 +470,9 @@ type OutPat id = LPat id
 
 type LPat id = Located (Pat id)
 
+type ConPatDetails id = ConDetails (LPat id) (RecFields id (LPat id))
 
-type ConPatDetails id =
-     ConDetails (LPat id) (RecFields id (LPat id))
-
-data RecFields id arg = RecFields{rec_flds ::
-                                      [LRecField id arg],
-                                      rec_dotdot :: Maybe Int}
+data RecFields id arg = RecFields [LRecField id arg] (Maybe Int)
 
 type LRecField' id arg = Located (RecField' id arg)
 
@@ -543,11 +482,9 @@ type LRecUpdField id = Located (RecUpdField id)
 
 type RecField id arg = RecField' (FieldOcc id) arg
 
-type RecUpdField id =
-     RecField' (AmbiguousFieldOcc id) (LExp id)
+type RecUpdField id = RecField' (AmbiguousFieldOcc id) (LExp id)
 
-data RecField' id arg = RecField{hsRecFieldLbl :: Located id,
-                                     hsRecFieldArg :: arg, hsRecPun :: Bool}
+data RecField' id arg = RecField (Located id) arg Bool
 
 
 --------------------------------------------------------------------------------
@@ -563,16 +500,12 @@ type LDocString = Located DocString
 
 type LImportDecl name = Located (ImportDecl name)
 
-data ImportDecl name = ImportDecl{ideclSourceSrc ::
-                                  Maybe SourceText,
-                                  ideclName :: Located ModuleName,
-                                  ideclPkgQual :: Maybe StringLiteral, ideclSource :: Bool,
-                                  ideclSafe :: Bool, ideclQualified :: Bool, ideclImplicit :: Bool,
-                                  ideclAs :: Maybe ModuleName,
-                                        ideclHiding    :: Maybe (Bool, Located [LIE name])
-
-    }
-
+data ImportDecl name = ImportDecl (Maybe SourceText)
+                                  (Located ModuleName)
+                                  (Maybe StringLiteral) Bool
+                                  Bool Bool Bool
+                                  (Maybe ModuleName)
+                                  (Maybe (Bool, Located [LIE name]))
 
 type LIE name = Located (IE name)
 
