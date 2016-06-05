@@ -34,7 +34,7 @@ data Exp id
 
   | LamCase  (MatchGroup id (LExp id))
 
-  | Let      (Located (LocalBinds id)) (LExp  id)
+  | Let      (LLocalBinds id) (LExp  id)
 
   | IPVar    IPName
 
@@ -67,7 +67,7 @@ data Exp id
 -- ListComp      (part of StmtContext)
 -- MonadComp     (part of StmtContext)
 -- ParArrayComp  (part of StmtContext)
-  | Do           (StmtContext Name) (Located [ExpLStmt id]) (PostTc id TCRType)
+  | Do           (StmtContext Name) (LExpLStmts id) (PostTc id TCRType)
 -- MDo           (part of StmtContext)
 -- ArrowExp      (part of StmtContext)
 -- GhciStmtCtxt  (part of StmtContext)
@@ -123,10 +123,10 @@ data Pat id
   | VarPat    (Located id)
 
   | LitPat    Lit
-  | NPat      (Located (OverLit id))
+  | NPat      (LOverLit id)
               (Maybe (SyntaxExp id))  (SyntaxExp id) (PostTc id TCRType)
 
-  | NPlusKPat (Located id) (Located (OverLit id)) (OverLit id) (SyntaxExp id)
+  | NPlusKPat (Located id) (LOverLit id) (OverLit id) (SyntaxExp id)
               (SyntaxExp id) (PostTc id TCRType)
 
   | TuplePat  [LPat id] Boxity [PostTc id TCRType]
@@ -150,8 +150,8 @@ data Pat id
   | PArrPat   [LPat id] (PostTc id TCRType)
 
   | ConPatIn  (Located id) (ConPatDetails id)
-  | ConPatOut (Located ConLike) [TCRType] [TyVar] [EvVar] TcEvBinds
-              (ConPatDetails id) Wrapper
+  | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds (ConPatDetails id)
+              Wrapper
 --  PRec
 --  PInfixApp
 
@@ -246,7 +246,31 @@ type LWarnDecls       name = Located (WarnDecls name)
 type LWarnDecl        name = Located (WarnDecl name)
 type LAnnDecl         name = Located (AnnDecl name)
 type LRoleAnnotDecl   name = Located (RoleAnnotDecl name)
-
+type LModuleName           = Located ModuleName
+type LIPName               = Located IPName
+type LSplice id            = Located (Splice id)
+type LCType                = Located CType
+type LOverlapMode          = Located OverlapMode
+type LCCallConv            = Located CCallConv
+type LSafety               = Located Safety
+type LSourceText           = Located SourceText
+type LCExportSpec          = Located CExportSpec
+type LOverLit id           = Located (OverLit id)
+type LConLike              = Located ConLike
+type LExpLStmts id         = Located [ExpLStmt id]
+type LCmdLStmts id         = Located [CmdLStmt id]
+type LLMatchs id body      = Located [LMatch id body]
+type LLIEs name            = Located [LIE name]
+type LFieldLbl name        = Located (FieldLbl name)
+type LLSigTypes name       = Located [LSigType name]
+type LLConDeclFields name  = Located [LConDeclField name]
+type LRdrName              = Located RdrName
+type LName                 = Located Name
+type LFunDepL name         = Located (FunDep (Located name))
+type LSrcTextRuleName      = Located (SourceText, RuleName)
+type LMRole                = Located (Maybe Role)
+type LLocalBinds id        = Located (LocalBinds id)
+type LLocalBindsLR idL idR = Located (LocalBindsLR idL idR)
 
 --------------------------------------------------------
 
@@ -338,8 +362,8 @@ data Cmd id
   | CmdPar     (LCmd id)
   | CmdCase    (LExp id) (MatchGroup id (LCmd id))
   | CmdIf      (Maybe (SyntaxExp id)) (LExp id) (LCmd id) (LCmd id)
-  | CmdLet     (Located (LocalBinds id)) (LCmd  id)
-  | CmdDo      (Located [CmdLStmt id]) (PostTc id TCRType)
+  | CmdLet     (LLocalBinds id) (LCmd  id)
+  | CmdDo      (LCmdLStmts id) (PostTc id TCRType)
   | CmdWrap    Wrapper (Cmd id)
 
 data ArrAppType
@@ -353,8 +377,7 @@ data CmdTop id
 type RecordBinds id = RecFields id (LExp id)
 
 data MatchGroup id body
-  = MG (Located [LMatch id body]) [PostTc id TCRType] (PostTc id TCRType)
-       Origin
+  = MG (LLMatchs id body) [PostTc id TCRType] (PostTc id TCRType) Origin
 
 data Match id body
   = Match (MatchFixity id) [LPat id] (Maybe (LType id)) (GRHSs id body)
@@ -364,7 +387,7 @@ data MatchFixity id
   | FunBindMatch (Located id) Bool
 
 data GRHSs id body
-  = GRHSs [LGRHS id body] (Located (LocalBinds id))
+  = GRHSs [LGRHS id body] (LLocalBinds id)
 
 data GRHS id body
   = GRHS [GuardLStmt id] body
@@ -386,7 +409,7 @@ data StmtLR idL idR body
   | ApplicativeStmt [(SyntaxExp idR, ApplicativeArg idL idR)]
                     (Maybe (SyntaxExp idR)) (PostTc idR TCRType)
   | BodyStmt body (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType)
-  | LetStmt  (Located (LocalBindsLR idL idR))
+  | LetStmt  (LLocalBindsLR idL idR)
   | ParStmt  [ParStmtBlock idL idR] (Exp idR) (SyntaxExp idR)
              (PostTc idR TCRType)
   | TransStmt TransForm [ExpLStmt idL] [(idR, idR)] (LExp idR)
@@ -494,17 +517,16 @@ newtype DocString = DocString FastString
 -- ImpExp
 
 data ImportDecl name
-  = ImportDecl (Maybe SourceText) (Located ModuleName)
+  = ImportDecl (Maybe SourceText) LModuleName
                (Maybe StringLiteral) Bool Bool Bool Bool
-               (Maybe ModuleName) (Maybe (Bool, Located [LIE name]))
+               (Maybe ModuleName) (Maybe (Bool, LLIEs name))
 
 data IE name
   = IEVar (Located name)
   | IEThingAbs (Located name)
   | IEThingAll (Located name)
-  | IEThingWith (Located name) IEWildcard [Located name]
-                [Located (FieldLbl name)]
-  | IEModuleContents (Located ModuleName)
+  | IEThingWith (Located name) IEWildcard [Located name] [LFieldLbl name]
+  | IEModuleContents LModuleName
   | IEGroup Int DocString
   | IEDoc DocString
   | IEDocNamed String
@@ -558,7 +580,7 @@ data IPBinds id
   = IPBinds' [LIPBind id] TcEvBinds
 
 data IPBind id
-  = IPBind (Either (Located IPName) id) (LExp id)
+  = IPBind (Either LIPName id) (LExp id)
 
 data Sig name
   = TypeSig [Located name] (LSigWcType name)
@@ -623,7 +645,7 @@ data SpliceExplicitFlag
   | ImplicitSplice
 
 data SpliceDecl id
-  = SpliceDecl (Located (Splice id)) SpliceExplicitFlag
+  = SpliceDecl (LSplice id) SpliceExplicitFlag
 
 data TyClDecl name
   = FamDecl (FamilyDecl name)
@@ -631,7 +653,7 @@ data TyClDecl name
   | DataDecl (Located name) (LQTyVars name) (DataDefn name) (PostRn name Bool)
              (PostRn name NameSet)
   | ClassDecl (LContext name) (Located name) (LQTyVars name)
-              [Located (FunDep (Located name))] [LSig name] (LBinds name)
+              [LFunDepL name] [LSig name] (LBinds name)
               [LFamilyDecl name] [LTyFamDefltEqn name] [LDocDecl]
               (PostRn name NameSet)
 
@@ -657,10 +679,10 @@ data FamilyInfo name
   | ClosedTypeFamily (Maybe [LTyFamInstEqn name])
 
 data DataDefn name
-  = DataDefn NewOrData (LContext name) (Maybe (Located CType))
+  = DataDefn NewOrData (LContext name) (Maybe LCType)
              (Maybe (LKind name)) [LConDecl name] (Deriving name)
 
-type Deriving name = Maybe (Located [LSigType name])
+type Deriving name = Maybe (LLSigTypes name)
 
 data NewOrData
   = NewType
@@ -672,7 +694,7 @@ data ConDecl name
                (ConDeclDetails name) (Maybe LDocString)
 
 type ConDeclDetails name =
-   ConDetails (LBangType name) (Located [LConDeclField name])
+   ConDetails (LBangType name) (LLConDeclFields name)
 
 type TyPats name = ImplicitBndrs name [LType name]
 
@@ -692,7 +714,7 @@ data DataFamInstDecl name
 
 data ClsInstDecl name
   = ClsInstDecl (LSigType name) (LBinds name) [LSig name] [LTyFamInstDecl name]
-                [LDataFamInstDecl name] (Maybe (Located OverlapMode))
+                [LDataFamInstDecl name] (Maybe LOverlapMode)
 
 data InstDecl name
   = ClsInstD (ClsInstDecl name)
@@ -700,20 +722,19 @@ data InstDecl name
   | TyFamInstD (TyFamInstDecl name)
 
 data DerivDecl name
-  = DerivDecl (LSigType name) (Maybe (Located OverlapMode))
+  = DerivDecl (LSigType name) (Maybe LOverlapMode)
 
 data DefaultDecl name
   = DefaultDecl [LType name]
 
 data ForeignDecl name
   = ForeignImport (Located name) (LSigType name) (PostTc name Coercion)
-                                      ForeignImport
+                  ForeignImport
   | ForeignExport (Located name) (LSigType name) (PostTc name Coercion)
                   ForeignExport
 
 data ForeignImport
-  = CImport (Located CCallConv) (Located Safety)
-            (Maybe Header) CImportSpec (Located SourceText)
+  = CImport LCCallConv LSafety (Maybe Header) CImportSpec LSourceText
 
 data CImportSpec
   = CLabel CLabelString
@@ -721,15 +742,15 @@ data CImportSpec
   | CWrapper
 
 data ForeignExport
-  = CExport (Located CExportSpec) (Located SourceText)
+  = CExport LCExportSpec LSourceText
 
 data RuleDecls name
   = Rules SourceText [LRuleDecl name]
 
 data RuleDecl name
-  = Rule (Located (SourceText, RuleName))
-         Activation [LRuleBndr name] (Located (Exp name))
-         (PostRn name NameSet) (Located (Exp name)) (PostRn name NameSet)
+  = Rule LSrcTextRuleName
+         Activation [LRuleBndr name] (LExp name)
+         (PostRn name NameSet) (LExp name) (PostRn name NameSet)
 
 data RuleBndr name
   = RuleBndr (Located name)
@@ -758,7 +779,7 @@ data WarnDecl name
   = Warning [Located name] WarningTxt
 
 data AnnDecl name
-  = Annotation SourceText (AnnProvenance name) (Located (Exp name))
+  = Annotation SourceText (AnnProvenance name) (LExp name)
 
 data AnnProvenance name
   = ValueAnnProvenance (Located name)
@@ -766,7 +787,7 @@ data AnnProvenance name
   | ModuleAnnProvenance
 
 data RoleAnnotDecl name
-  = RoleAnnotDecl (Located name) [Located (Maybe Role)]
+  = RoleAnnotDecl (Located name) [LMRole]
 
 -------------------------------------------------------------------------------
 -- Types
@@ -828,7 +849,7 @@ data TyLit
   | StrTy SourceText FastString
 
 newtype WildCardInfo name
-  = AnonWildCard (PostRn name (Located Name))
+  = AnonWildCard (PostRn name LName)
 
 data AppType name
   = AppInfix (Located name)
@@ -849,8 +870,8 @@ data ConDetails arg rec
   | InfixCon arg arg
 
 data FieldOcc name
-  = FieldOcc (Located RdrName) (PostRn name name)
+  = FieldOcc LRdrName (PostRn name name)
 
 data AmbiguousFieldOcc name
-  = Unambiguous (Located RdrName) (PostRn name name)
-  | Ambiguous (Located RdrName) (PostTc name name)
+  = Unambiguous LRdrName (PostRn name name)
+  | Ambiguous LRdrName (PostTc name name)
