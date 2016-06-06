@@ -45,7 +45,7 @@ data Exp l
   | RecConstr    l (QName l) [FieldUpdate l]
 
   | RecUpdate    l (Exp l)   [FieldUpdate l]
--- ...
+-- \n
 
   | Tuple              l Boxed [Exp l]
   | TupleSection       l Boxed [Maybe (Exp l)]
@@ -91,8 +91,8 @@ data Exp l
   | CorePragma l      String (Exp l)
   | SCCPragma  l      String (Exp l)
   | GenPragma  l      String (Int, Int) (Int, Int) (Exp l)
---                    ...
---                    ...
+--                    \n
+--                    \n
 
   | Proc            l (Pat l) (Exp l)
 
@@ -124,15 +124,15 @@ data Pat l
 
   | PLit        l (Sign l) (Literal l)
 --  NPat
---  ...
+--  \n
 
   | PNPlusK     l (Name l) Integer
--- ...
+-- \n
 
   | PTuple      l Boxed [Pat l]
 
   | PList       l [Pat l]
--- ...
+-- \n
 
   | PParen      l (Pat l)
 
@@ -151,7 +151,7 @@ data Pat l
 
   | PApp        l (QName l) [Pat l]
 --  ConPatOut
---   ...
+--   \n
   | PRec        l (QName l) [PatField l]
   | PInfixApp   l (Pat l) (QName l) (Pat l)
 
@@ -185,6 +185,72 @@ data Literal l
   | PrimFloat  l Rational String
 
   | PrimDouble l Rational String
+
+data Decl l
+  = RoleAnnotDecl     l (QName l) [Role l]
+
+  | AnnPragma         l (Annotation l)
+
+  | DerivDecl         l (Maybe (Overlap l)) (InstRule l)
+
+  | WarnPragmaDecl    l [([Name l], String)]
+
+  | RulePragmaDecl    l [Rule l]
+
+  | DefaultDecl       l [Type l]
+
+  | ForImp            l (CallConv l) (Maybe (Safety l)) (Maybe String) (Name l)
+                        (Type l)
+  | ForExp            l (CallConv l) (Maybe String) (Name l) (Type l)
+
+  | SpliceDecl        l (Exp l)
+
+--  DocD  (missing?)
+
+  | TypeSig           l [Name l] (Type l)
+  | PatSynSig         l (Name l) (Maybe [TyVarBind l]) (Maybe (Context l))
+                        (Maybe (Context l)) (Type l)
+--  ClassOpSig
+--  IdSig
+  | InfixDecl         l (Assoc l) (Maybe Int) [Op l]
+  | InlineSig         l Bool (Maybe (Activation l)) (QName l)
+  | SpecSig           l (Maybe (Activation l)) (QName l) [Type l]
+  | InstSig           l (InstRule l)
+  | MinimalPragma     l (Maybe (BooleanFormula l))
+  | InlineConlikeSig  l (Maybe (Activation l)) (QName l)
+  | SpecInlineSig     l Bool (Maybe (Activation l)) (QName l) [Type l]
+
+--  HsSyn groups below
+  | DataFamDecl       l (Maybe (Context l)) (DeclHead l) (Maybe (Kind l))
+  | TypeFamDecl       l (DeclHead l) (Maybe (Kind l))
+  | ClosedTypeFamDecl l (DeclHead l) (Maybe (Kind l))  [TypeEqn l]
+  | TypeDecl          l (DeclHead l) (Type l)
+  | DataDecl          l (DataOrNew l) (Maybe (Context l)) (DeclHead l)
+                        [QualConDecl l] (Maybe (Deriving l))
+  | GDataDecl         l (DataOrNew l) (Maybe (Context l)) (DeclHead l)
+                        (Maybe (Kind l)) [GadtDecl l]    (Maybe (Deriving l))
+  | ClassDecl         l (Maybe (Context l)) (DeclHead l) [FunDep l]
+                        (Maybe [ClassDecl l])
+
+--  HsSyn groups below
+  | InstDecl          l (Maybe (Overlap l)) (InstRule l) (Maybe [InstDecl l])
+  | DataInsDecl       l (DataOrNew l) (Type l) [QualConDecl l]
+                        (Maybe (Deriving l))
+  | GDataInsDecl      l (DataOrNew l) (Type l) (Maybe (Kind l)) [GadtDecl l]
+                        (Maybe (Deriving l))
+  | TypeInsDecl       l (Type l) (Type l)
+
+-- HsSyn groups below
+  | FunBind           l [Match l]
+  | PatBind           l (Pat l) (Rhs l) (Maybe (Binds l)) --expanding Pat below
+--  Pat.PVar
+--  AbsBinds     (what is this?)
+--  AbsBindsSig  (what is this?)
+  | PatSyn            l (Pat l) (Pat l) (PatternSynDirection l)
+
+  | DeprPragmaDecl    l [([Name l], String)]
+
+--  VectD (missing)
 
 
 ------------ the rest is not compared -------------
@@ -263,48 +329,6 @@ data Assoc l
   = AssocNone  l
   | AssocLeft  l
   | AssocRight l
-
-data Decl l
-  = TypeDecl          l (DeclHead l) (Type l)
-  | TypeFamDecl       l (DeclHead l) (Maybe (Kind l))
-  | ClosedTypeFamDecl l (DeclHead l) (Maybe (Kind l))  [TypeEqn l]
-  | DataDecl          l (DataOrNew l) (Maybe (Context l)) (DeclHead l)
-                        [QualConDecl l] (Maybe (Deriving l))
-  | GDataDecl         l (DataOrNew l) (Maybe (Context l)) (DeclHead l)
-                        (Maybe (Kind l)) [GadtDecl l]    (Maybe (Deriving l))
-  | DataFamDecl       l (Maybe (Context l)) (DeclHead l) (Maybe (Kind l))
-  | TypeInsDecl       l (Type l) (Type l)
-  | DataInsDecl       l (DataOrNew l) (Type l) [QualConDecl l]
-                        (Maybe (Deriving l))
-  | GDataInsDecl      l (DataOrNew l) (Type l) (Maybe (Kind l)) [GadtDecl l]
-                        (Maybe (Deriving l))
-  | ClassDecl         l (Maybe (Context l)) (DeclHead l) [FunDep l]
-                        (Maybe [ClassDecl l])
-  | InstDecl          l (Maybe (Overlap l)) (InstRule l) (Maybe [InstDecl l])
-  | DerivDecl         l (Maybe (Overlap l)) (InstRule l)
-  | InfixDecl         l (Assoc l) (Maybe Int) [Op l]
-  | DefaultDecl       l [Type l]
-  | SpliceDecl        l (Exp l)
-  | TypeSig           l [Name l] (Type l)
-  | PatSynSig         l (Name l) (Maybe [TyVarBind l]) (Maybe (Context l))
-                        (Maybe (Context l)) (Type l)
-  | FunBind           l [Match l]
-  | PatBind           l (Pat l) (Rhs l) (Maybe (Binds l))
-  | PatSyn            l (Pat l) (Pat l) (PatternSynDirection l)
-  | ForImp            l (CallConv l) (Maybe (Safety l)) (Maybe String) (Name l)
-                        (Type l)
-  | ForExp            l (CallConv l) (Maybe String) (Name l) (Type l)
-  | RulePragmaDecl    l [Rule l]
-  | DeprPragmaDecl    l [([Name l], String)]
-  | WarnPragmaDecl    l [([Name l], String)]
-  | InlineSig         l Bool (Maybe (Activation l)) (QName l)
-  | InlineConlikeSig  l (Maybe (Activation l)) (QName l)
-  | SpecSig           l (Maybe (Activation l)) (QName l) [Type l]
-  | SpecInlineSig     l Bool (Maybe (Activation l)) (QName l) [Type l]
-  | InstSig           l (InstRule l)
-  | AnnPragma         l (Annotation l)
-  | MinimalPragma     l (Maybe (BooleanFormula l))
-  | RoleAnnotDecl     l (QName l) [Role l]
 
 data PatternSynDirection l
   = Unidirectional

@@ -4,7 +4,7 @@ module Syntax where
 data Exp id
   = Var      (Located id)
   | UnboundVar UnboundVar
--- Con
+--  Con
 
   | Lit      Lit
   | OverLit  (OverLit id)
@@ -185,6 +185,72 @@ data Lit
   | FloatPrim     FractionalLit
 
   | DoublePrim    FractionalLit
+
+data Decl id
+  = RoleAnnotD (RoleAnnotDecl id)
+
+  | AnnD (AnnDecl id)
+
+  | DerivD (DerivDecl id)
+
+  | WarningD (WarnDecls id)
+
+  | RuleD (RuleDecls id)
+
+  | DefD (DefaultDecl id)
+
+  | ForD (ForeignDecl id)
+--   \n
+--  ForExp (in ForeignDecl)
+
+  | SpliceD (SpliceDecl id)
+
+  | DocD (DocDecl)
+
+  | SigD (Sig id) -- (TypeSig in Sig)
+--  PatSynSig   (in Sig)
+--    \n
+--  ClassOpSig  (in Sig)
+--  IdSig       (in Sig)
+--  FixSig      (in Sig)
+--  InlineSig   (in Sig)
+--  SpecSig     (in Sig)
+--  SpecInstSig (in Sig)
+--  MinimalSig  (in Sig)
+--  InlineConlikeSig (what does it correspond to?)
+--  SpecInlineSig    (what does it correspond to?)
+
+  | TyClD (TyClDecl id) -- expanding TyClDecl below
+--  TyClDecl.FamilyDecl.DataFamily
+--  TyClDecl.FamilyDecl.OpenTypeFamily
+--  TyClDecl.FamilyDecl.ClosedTypeFamily
+--  TyClDecl.SynDecl
+--  TyClDecl.DataDecl
+--             \n
+--           GDataDecl (grouped with above?)
+--             \n
+--  TyClDecl.ClassDecl
+--             \n
+
+  | InstD (InstDecl id) -- expanding InstDecl below
+--  InstDecl.ClsInstD
+--  InstDecl.DataFamInstD
+--             \n
+--           GDataInsDecl (grouped with above?)
+--             \n
+--  InstDecl.TyFamInstD
+
+  | ValD (Bind id)
+--  Bind.FunBind
+--  Bind.PatBind
+--  Bind.VarBind
+--  Bind.AbsBinds
+--  Bind.AbsBindsSig
+--  Bind.PatSynBind
+
+--  DeprPragmaDecl  (missing?)
+
+  | VectD (VectDecl id)
 
 
 ------------ the rest is not compared -------------
@@ -618,22 +684,6 @@ data PatSynDir id
 
 ------------------------------------------------------------------------------
 -- Decls
-
-data Decl id
-  = TyClD (TyClDecl id)
-  | InstD (InstDecl id)
-  | DerivD (DerivDecl id)
-  | ValD (Bind id)
-  | SigD (Sig id)
-  | DefD (DefaultDecl id)
-  | ForD (ForeignDecl id)
-  | WarningD (WarnDecls id)
-  | AnnD (AnnDecl id)
-  | RuleD (RuleDecls id)
-  | VectD (VectDecl id)
-  | SpliceD (SpliceDecl id)
-  | DocD (DocDecl)
-  | RoleAnnotD (RoleAnnotDecl id)
 
 data Group id
   = Group (ValBinds id) [LSpliceDecl id] [TyClGroup id] [LDerivDecl id]
