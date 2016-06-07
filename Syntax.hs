@@ -256,6 +256,56 @@ data Decl id
 
   | VectD (VectDecl id)
 
+data Type name
+  = ForAllTy [LTyVarBndr name] (LType name)
+
+  | FunTy (LType name) (LType name)
+
+  | TupleTy TupleSort [LType name]
+
+  | ListTy (LType name)
+
+  | PArrTy (LType name)
+
+  | AppTy (LType name) (LType name)
+
+  | TyVar (Located name)
+
+ -- HSE.TyCon (part of above)
+
+  | ParTy (LType name)
+
+  | KindSig (LType name) (LKind name)
+
+  | BangTy SrcBang (LType name)
+
+  | WildCardTy (WildCardInfo name)
+
+  | EqTy (LType name) (LType name)
+
+  | SpliceTy (Splice name) (PostTc name TCRKind)
+
+  | OpTy (LType name) (Located name) (LType name) -- match?
+
+  | TyLit TyLit
+--  TyLit.Num
+--  TyLit.String
+  | AppsTy [LAppType name] -- assuming it is promoted constructors
+  | ExplicitListTy (PostTc name TCRKind) [LType name]
+  | ExplicitTupleTy [PostTc name TCRKind] [LType name]
+--  HSE.Promoted.PromotedUnit (ExplicitTupleTy [] []?)
+
+--  HSE.TyQuasiQuote (missing?)
+
+  | QualTy (LContext name) (LType name)
+
+  | IParamTy IPName (LType name)
+
+  | DocTy (LType name) LDocString
+
+  | RecTy [LConDeclField name]
+
+  | CoreTy TCRType
 
 ------------ the rest is not compared -------------
 
@@ -872,31 +922,6 @@ newtype IPName = IPName FastString
 data TyVarBndr name
   = UserTyVar (Located name)
   | KindedTyVar (Located name) (LKind name)
-
-data Type name
-  = ForAllTy [LTyVarBndr name] (LType name)
-  | QualTy (LContext name) (LType name)
-  | TyVar (Located name)
-  | AppsTy [LAppType name]
-  | AppTy (LType name) (LType name)
-  | FunTy (LType name) (LType name)
-  | ListTy (LType name)
-  | PArrTy (LType name)
-  | TupleTy TupleSort [LType name]
-  | OpTy (LType name) (Located name) (LType name)
-  | ParTy (LType name)
-  | IParamTy IPName (LType name)
-  | EqTy (LType name) (LType name)
-  | KindSig (LType name) (LKind name)
-  | SpliceTy (Splice name) (PostTc name TCRKind)
-  | DocTy (LType name) LDocString
-  | BangTy SrcBang (LType name)
-  | RecTy [LConDeclField name]
-  | CoreTy TCRType
-  | ExplicitListTy (PostTc name TCRKind) [LType name]
-  | ExplicitTupleTy [PostTc name TCRKind] [LType name]
-  | TyLit TyLit
-  | WildCardTy (WildCardInfo name)
 
 data TyLit
   = NumTy SourceText Integer
