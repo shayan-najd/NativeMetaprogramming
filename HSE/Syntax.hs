@@ -256,6 +256,56 @@ data Decl l
 
 --  HsSyn.VectD (missing)
 
+data Type l
+  = TyForall     l (Maybe [TyVarBind l]) (Maybe (Context l)) (Type l)
+
+  | TyFun        l (Type l) (Type l)
+
+  | TyTuple      l Boxed [Type l]
+
+  | TyList       l (Type l)
+
+  | TyParArray   l (Type l)
+
+  | TyApp        l (Type l) (Type l)
+
+  | TyVar        l (Name l)
+
+  | TyCon        l (QName l)
+
+  | TyParen      l (Type l)
+
+  | TyKind       l (Type l) (Kind l)
+
+  | TyBang       l (BangType l) (Type l)
+
+  | TyWildCard   l (Maybe (Name l))
+
+  | TyEquals     l (Type l) (Type l)
+
+  | TySplice     l (Splice l)
+
+  | TyInfix      l (Type l) (QName l) (Type l)
+
+  | TyPromoted   l (Promoted l)
+--  Promoted.PromotedInteger
+--  Promoted.PromotedString
+--  Promoted.PromotedCon
+--  Promoted.PromotedList
+--  Promoted.PromotedTuple
+--  Promoted.PromotedUnit
+
+  | TyQuasiQuote l String String
+
+-- HsSyn.QualTy (missing)
+
+-- HsSyn.IParamTy (missing)
+
+-- HsSyn.DocTy (missing)
+
+-- HsSyn.RecTy (missing)
+
+-- HsSyn.CoreTy (missing)
 
 ------------ the rest is not compared -------------
 data ModuleName l
@@ -432,25 +482,6 @@ data Rhs l
 
 data GuardedRhs l
   = GuardedRhs l [Stmt l] (Exp l)
-
-data Type l
-  = TyForall     l (Maybe [TyVarBind l]) (Maybe (Context l)) (Type l)
-  | TyFun        l (Type l) (Type l)
-  | TyTuple      l Boxed [Type l]
-  | TyList       l (Type l)
-  | TyParArray   l (Type l)
-  | TyApp        l (Type l) (Type l)
-  | TyVar        l (Name l)
-  | TyCon        l (QName l)
-  | TyParen      l (Type l)
-  | TyInfix      l (Type l) (QName l) (Type l)
-  | TyKind       l (Type l) (Kind l)
-  | TyPromoted   l (Promoted l)
-  | TyEquals     l (Type l) (Type l)
-  | TySplice     l (Splice l)
-  | TyBang       l (BangType l) (Type l)
-  | TyWildCard   l (Maybe (Name l))
-  | TyQuasiQuote l String String
 
 data Promoted l
   = PromotedInteger l Integer String
