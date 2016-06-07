@@ -4,7 +4,7 @@ module Syntax where
 data Exp id
   = Var      (Located id)
   | UnboundVar UnboundVar
---  Con
+--  HSE.Con (missing?)
 
   | Lit      Lit
   | OverLit  (OverLit id)
@@ -48,40 +48,43 @@ data Exp id
               (PostTc id [TCRType]) (PostTc id [TCRType]) (PostTc id Wrapper)
 
   | ExplicitTuple [LTupArg id] Boxity
---  TupleSection
+--  HSE.TupleSection (part of above?)
 
   | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp id)) [LExp id]
 
   | ExplicitPArr (PostTc id TCRType) [LExp id]
 
   | ArithSeq  PostTcExp (Maybe (SyntaxExp id)) (ArithSeqInfo id)
---  EnumFromTo      (part of ArithSeqInfo)
---  EnumFromThen    (part of ArithSeqInfo)
---  EnumFromThenTo  (part of ArithSeqInfo)
+--  ArithSeqInfo.From
+--  ArithSeqInfo.FromTo
+--  ArithSeqInfo.FromThen
+--  ArithSeqInfo.FromThenTo
 
-  | PArrSeq   PostTcExp (ArithSeqInfo id)
---  ParArrayFromTo      (part of ArithSeqInfo)
---  ParArrayFromThen    (part of ArithSeqInfo)
---  ParArrayFromThenTo  (part of ArithSeqInfo)
+  | PArrSeq   PostTcExp (ArithSeqInfo id) -- expanding ArithSeqInfo below
+--  ArithSeqInfo.From
+--  ArithSeqInfo.FromTo
+--  ArithSeqInfo.FromThen
+--  ArithSeqInfo.FromThenTo
 
--- ListComp      (part of StmtContext)
--- MonadComp     (part of StmtContext)
--- ParArrayComp  (part of StmtContext)
   | Do           (StmtContext Name) (LExpLStmts id) (PostTc id TCRType)
--- MDo           (part of StmtContext)
--- ArrowExp      (part of StmtContext)
--- GhciStmtCtxt  (part of StmtContext)
--- PatGuard      (part of StmtContext)
--- ParComp       (part of StmtContext)
--- TransStmtCtxt (part of StmtContext)
+--  StmtContext.ListComp
+--  StmtContext.MonadComp
+--  StmtContext.ParArrComp
+--  StmtContext.DoExp
+--  StmtContext.MDoExp
+--  StmtContext.ArrowExp
+--  StmtContext.GhciStmtCtxt
+--  StmtContext.PatGuard
+--  StmtContext.ParStmtCtxt
+--  StmtContext.TransStmtCtxt
 
   | Bracket      (Bracket id)
   | RnBracketOut (Bracket Name) [PendingRnSplice]
   | TcBracketOut (Bracket Name) [PendingTcSplice]
---  QuasiQuote
+--  HSE.QuasiQuote (missing?)
 
---  VarQuote
---  TypQuote
+--  HSE.VarQuote (missing?)
+--  HSE.TypQuote (missing?)
 
   | SpliceE  (Splice id)
 
@@ -97,9 +100,9 @@ data Exp id
   | Proc      (LPat id) (LCmdTop id)
 
   | ArrApp    (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
---  LeftArrHighApp (don't know how they compare)
+--  HSE.LeftArrHighApp (don't know how they compare)
   | ArrForm   (LExp id) (Maybe Fixity) [LCmdTop id]
---  RightArrHighApp (don't know how they compare)
+--  HSE.RightArrHighApp (don't know how they compare)
 
   | EWildPat -- (right comparison?)
 
@@ -207,18 +210,19 @@ data Decl id
 
   | DocD (DocDecl)
 
-  | SigD (Sig id) -- (TypeSig in Sig)
---  PatSynSig   (in Sig)
+  | SigD (Sig id)
+--  Sig.TypeSig
+--  Sig.PatSynSig
 --    \n
---  ClassOpSig  (in Sig)
---  IdSig       (in Sig)
---  FixSig      (in Sig)
---  InlineSig   (in Sig)
---  SpecSig     (in Sig)
---  SpecInstSig (in Sig)
---  MinimalSig  (in Sig)
---  InlineConlikeSig (what does it correspond to?)
---  SpecInlineSig    (what does it correspond to?)
+--  Sig.ClassOpSig
+--  Sig.IdSig
+--  Sig.FixSig
+--  Sig.InlineSig
+--  Sig.SpecSig
+--  Sig.SpecInstSig
+--  Sig.MinimalSig
+--  HSe.InlineConlikeSig (what does it correspond to?)
+--  HSe.SpecInlineSig    (what does it correspond to?)
 
   | TyClD (TyClDecl id) -- expanding TyClDecl below
 --  TyClDecl.FamilyDecl.DataFamily
@@ -248,7 +252,7 @@ data Decl id
 --  Bind.AbsBindsSig
 --  Bind.PatSynBind
 
---  DeprPragmaDecl  (missing?)
+--  HSE.DeprPragmaDecl  (missing?)
 
   | VectD (VectDecl id)
 
