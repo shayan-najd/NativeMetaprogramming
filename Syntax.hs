@@ -3,11 +3,11 @@ module Syntax where
 
 data Exp l
   = Var          l (QName l)
---  UnboundVar
+--  HsSyn.UnboundVar (missing?)
   | Con          l (QName l)
 
   | Lit          l (Literal l)
---  OverLit
+--  HsSyn.OverLit (missing?)
 
   | App          l (Exp l) (Exp l)
 
@@ -19,8 +19,8 @@ data Exp l
 
   | InfixApp     l (Exp l) (QOp l) (Exp l)
 
--- AppType
--- AppTypeOut
+-- HsSyn.AppType    (missing?)
+-- HsSyn.AppTypeOut (missing?)
 
   | Paren        l (Exp l)
 
@@ -38,9 +38,9 @@ data Exp l
 
   | IPVar        l (IPName l)
 
--- RecFld
+-- HsSyn.RecFld    (missing?)
 
--- OverLabel
+-- HsSyn.OverLabel (missing?)
 
   | RecConstr    l (QName l) [FieldUpdate l]
 
@@ -54,26 +54,29 @@ data Exp l
 
   | ParArray           l [Exp l]
 
+--  HsSyn groups below
   | EnumFrom           l (Exp l)
   | EnumFromTo         l (Exp l) (Exp l)
   | EnumFromThen       l (Exp l) (Exp l)
   | EnumFromThenTo     l (Exp l) (Exp l) (Exp l)
 
+--  HsSyn groups below
 --  ParArrayFrom       (missing?)
   | ParArrayFromTo     l (Exp l) (Exp l)
 --  ParArrayFromThen   (missing?)
   | ParArrayFromThenTo l (Exp l) (Exp l) (Exp l)
 
+--  HsSyn groups below
   | ListComp           l (Exp l) [QualStmt l]
---  MonadComp          (missing? same as ListComp?)
+--  HsSyn.MonadComp          (missing? same as ListComp?)
   | ParArrayComp       l (Exp l) [[QualStmt l]]
   | Do                 l [Stmt l]
   | MDo                l [Stmt l]
---  ArrowExp            (?)
---  GhciStmtCtxt
---  PatGuard
+--  HsSyn.ArrowExp            (?)
+--  HsSyn.GhciStmtCtxt (missing?)
+--  HsSyn.PatGuard  (missing?)
   | ParComp            l (Exp l) [[QualStmt l]]
---  TransStmtCtxt
+--  HsSyn.TransStmtCtxt (missing?)
 
   | BracketExp l (Bracket l)
 --  RnBracketOut
@@ -86,7 +89,7 @@ data Exp l
   | SpliceExp l (Splice l)
 
   | ExpTypeSig         l (Exp l) (Type l)
---  ExpWithTySigOut
+--  HsSyn.ExpWithTySigOut (unnecessary)
 
   | CorePragma l      String (Exp l)
   | SCCPragma  l      String (Exp l)
@@ -103,19 +106,19 @@ data Exp l
 
   | ExprHole l
 
--- Static   (missing?)
+-- HsSyn.Static   (missing?)
 
--- Tick     (missing?)
+-- HsSyn.Tick     (missing?)
 
--- BinTick  (missing?)
+-- HsSyn.BinTick  (missing?)
 
--- EAsPat   (missing?)
+-- HsSyn.EAsPat   (missing?)
 
--- EViewPat (missing?)
+-- HsSyn.EViewPat (missing?)
 
--- ELazyPat (missing?)
+-- HsSyn.ELazyPat (missing?)
 
--- Wrap     (missing?)
+-- HsSyn.Wrap     (missing?)
 
 data Pat l
   = PWildCard   l
@@ -123,7 +126,7 @@ data Pat l
   | PVar        l (Name l)
 
   | PLit        l (Sign l) (Literal l)
---  NPat
+--  HsSyn.NPat (?)
 --  \n
 
   | PNPlusK     l (Name l) Integer
@@ -145,19 +148,19 @@ data Pat l
   | PIrrPat     l (Pat l)
 
   | PatTypeSig  l (Pat l) (Type l)
---  SigPatOut
+--  HsSyn.SigPatOut (unnecessary)
 
---  PArrPat
+--  HsSyn.PArrPat (missing?)
 
   | PApp        l (QName l) [Pat l]
---  ConPatOut
+--  HsSyn.ConPatOut (unnecessary)
 --   \n
   | PRec        l (QName l) [PatField l]
   | PInfixApp   l (Pat l) (QName l) (Pat l)
 
   | PQuasiQuote l String String
 
--- CoPat
+--  HsSyn.CoPat (missing?)
 
 data Literal l
   = Char       l Char     String
@@ -174,11 +177,11 @@ data Literal l
 
   | PrimWord   l Integer  String
 
---  Int64Prim  (missing?)
+--  HsSyn.Int64Prim  (missing?)
 
---  Word64Prim (missing?)
+--  HsSyn.Word64Prim (missing?)
 
---  Integer    (?)
+--  HsSyn.Integer    (?)
 
   | Frac       l Rational String
 
@@ -205,13 +208,14 @@ data Decl l
 
   | SpliceDecl        l (Exp l)
 
---  DocD  (missing?)
+--  HsSyn.DocD  (missing?)
 
+--  HsSyn groups below
   | TypeSig           l [Name l] (Type l)
   | PatSynSig         l (Name l) (Maybe [TyVarBind l]) (Maybe (Context l))
                         (Maybe (Context l)) (Type l)
---  ClassOpSig
---  IdSig
+--  HsSyn.ClassOpSig
+--  HsSyn.IdSig
   | InfixDecl         l (Assoc l) (Maybe Int) [Op l]
   | InlineSig         l Bool (Maybe (Activation l)) (QName l)
   | SpecSig           l (Maybe (Activation l)) (QName l) [Type l]
@@ -244,13 +248,13 @@ data Decl l
   | FunBind           l [Match l]
   | PatBind           l (Pat l) (Rhs l) (Maybe (Binds l)) --expanding Pat below
 --  Pat.PVar
---  AbsBinds     (what is this?)
---  AbsBindsSig  (what is this?)
+--  HsSyn.AbsBinds     (what is this?)
+--  HsSyn.AbsBindsSig  (what is this?)
   | PatSyn            l (Pat l) (Pat l) (PatternSynDirection l)
 
   | DeprPragmaDecl    l [([Name l], String)]
 
---  VectD (missing)
+--  HsSyn.VectD (missing)
 
 
 ------------ the rest is not compared -------------
