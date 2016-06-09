@@ -1,0 +1,1 @@
+(define-package "font-utils" "0.7.8" "Utility functions for working with fonts" '((persistent-soft "0.8.8") (pcache "0.2.3")) :url "http://github.com/rolandwalker/font-utils" :keywords '("extensions"))
