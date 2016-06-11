@@ -1,2 +1,5 @@
 [url "git://github.com/ghc/packages-"]
 	insteadOf = git://github.com/ghc/packages/
+[user]
+	email = sh.najd@ed.ac.uk
+	name = Shayan-Najd
