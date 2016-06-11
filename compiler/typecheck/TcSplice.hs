@@ -204,6 +204,7 @@ tcBrackTy (DecBrG _)  = tcMetaTy decsQTyConName -- Result type is Q [Dec]
 tcBrackTy (PatBr _)   = tcMetaTy patQTyConName  -- Result type is PatQ (= Q Pat)
 tcBrackTy (DecBrL _)  = panic "tcBrackTy: Unexpected DecBrL"
 tcBrackTy (TExpBr _)  = panic "tcUntypedBracket: Unexpected TExpBr"
+tcBrackTy (NativBr _) = tcMetaTy expQTyConName  -- Result type is ExpQ (= Q Exp)
 
 ---------------
 tcPendingSplice :: PendingRnSplice -> TcM PendingTcSplice

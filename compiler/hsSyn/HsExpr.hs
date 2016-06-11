@@ -1912,7 +1912,11 @@ pprQuals quals = interpp'SP quals
 -}
 
 data HsSplice id
-   = HsTypedSplice       --  $$z  or $$(f 4)
+   = HsNativSplice       --  $n(f 4)
+        id               -- A unique name to identify this splice point
+        (LHsExpr id)     -- See Note [Pending Splices]
+
+   | HsTypedSplice       --  $$z  or $$(f 4)
         id               -- A unique name to identify this splice point
         (LHsExpr id)     -- See Note [Pending Splices]
 
@@ -2053,6 +2057,7 @@ data HsBracket id = ExpBr (LHsExpr id)   -- [|  expr  |]
                   | VarBr Bool id        -- True: 'x, False: ''T
                                          -- (The Bool flag is used only in pprHsBracket)
                   | TExpBr (LHsExpr id)  -- [||  expr  ||]
+                  | NativBr (LHsExpr id)  -- [n|  expr  |]
 deriving instance (DataId id) => Data (HsBracket id)
 
 isTypedBracket :: HsBracket id -> Bool

@@ -81,6 +81,7 @@ dsBracket brack splices
     do_brack (DecBrG gp) = do { MkC ds1 <- repTopDs gp ; return ds1 }
     do_brack (DecBrL _)  = panic "dsBracket: unexpected DecBrL"
     do_brack (TExpBr e)  = do { MkC e1  <- repLE e     ; return e1 }
+    do_brack (NativBr e) = do { MkC e1  <- repLE e     ; return e1 }
 
 {- -------------- Examples --------------------
 

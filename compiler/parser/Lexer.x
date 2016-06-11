@@ -372,6 +372,7 @@ $tab          { warnTab }
   "[e|"       / { ifExtension thQuotesEnabled } { token (ITopenExpQuote HasE
                                                                 NormalSyntax) }
   "[e||"      / { ifExtension thQuotesEnabled } { token (ITopenTExpQuote HasE) }
+  "[n|"       / { ifExtension thQuotesEnabled } { token ITopenNQuote }
   "[p|"       / { ifExtension thQuotesEnabled } { token ITopenPatQuote }
   "[d|"       / { ifExtension thQuotesEnabled } { layout_token ITopenDecQuote }
   "[t|"       / { ifExtension thQuotesEnabled } { token ITopenTypQuote }
@@ -382,6 +383,7 @@ $tab          { warnTab }
   "$$" @varid / { ifExtension thEnabled } { skip_two_varid ITidTyEscape }
   "$("        / { ifExtension thEnabled } { token ITparenEscape }
   "$$("       / { ifExtension thEnabled } { token ITparenTyEscape }
+  "$n("       / { ifExtension thEnabled } { token ITparenNEscape }
 
   "[" @varid "|"  / { ifExtension qqEnabled }
                      { lex_quasiquote_tok }
@@ -705,6 +707,7 @@ data Token
 
   -- Template Haskell extension tokens
   | ITopenExpQuote HasE IsUnicodeSyntax --  [| or [e|
+  | ITopenNQuote                        --  [n|
   | ITopenPatQuote                      --  [p|
   | ITopenDecQuote                      --  [d|
   | ITopenTypQuote                      --  [t|
@@ -715,6 +718,7 @@ data Token
   | ITparenEscape                       --  $(
   | ITidTyEscape   FastString           --  $$x
   | ITparenTyEscape                     --  $$(
+  | ITparenNEscape                      --  $n(
   | ITtyQuote                           --  ''
   | ITquasiQuote (FastString,FastString,RealSrcSpan)
     -- ITquasiQuote(quoter, quote, loc)

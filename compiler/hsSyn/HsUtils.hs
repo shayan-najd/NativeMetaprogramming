@@ -64,7 +64,7 @@ module HsUtils(
   emptyRecStmt, emptyRecStmtName, emptyRecStmtId, mkRecStmt,
 
   -- Template Haskell
-  mkHsSpliceTy, mkHsSpliceE, mkHsSpliceTE, mkUntypedSplice,
+  mkHsSpliceTy, mkHsSpliceE, mkHsSpliceTE, mkUntypedSplice, mkHsSpliceNE,
   mkHsQuasiQuote, unqualQuasiQuote,
 
   -- Flags
@@ -331,6 +331,9 @@ mkHsSpliceE e = HsSpliceE (mkUntypedSplice e)
 
 mkHsSpliceTE :: LHsExpr RdrName -> HsExpr RdrName
 mkHsSpliceTE e = HsSpliceE (HsTypedSplice unqualSplice e)
+
+mkHsSpliceNE :: LHsExpr RdrName -> HsExpr RdrName
+mkHsSpliceNE e = HsSpliceE (HsNativSplice unqualSplice e)
 
 mkHsSpliceTy :: LHsExpr RdrName -> HsType RdrName
 mkHsSpliceTy e = HsSpliceTy (HsUntypedSplice unqualSplice e) placeHolderKind

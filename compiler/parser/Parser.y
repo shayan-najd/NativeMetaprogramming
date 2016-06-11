@@ -465,6 +465,7 @@ output it generates.
 
 -- Template Haskell
 '[|'            { L _ (ITopenExpQuote _ _) }
+'[n|'           { L _ ITopenNQuote  }
 '[p|'           { L _ ITopenPatQuote  }
 '[t|'           { L _ ITopenTypQuote  }
 '[d|'           { L _ ITopenDecQuote  }
@@ -475,6 +476,7 @@ TH_ID_SPLICE    { L _ (ITidEscape _)  }     -- $x
 '$('            { L _ ITparenEscape   }     -- $( exp )
 TH_ID_TY_SPLICE { L _ (ITidTyEscape _)  }   -- $$x
 '$$('           { L _ ITparenTyEscape   }   -- $$( exp )
+'$n('           { L _ ITparenNEscape   }   -- $n( exp )
 TH_TY_QUOTE     { L _ ITtyQuote       }      -- ''T
 TH_QUASIQUOTE   { L _ (ITquasiQuote _) }
 TH_QQUASIQUOTE  { L _ (ITqQuasiQuote _) }
@@ -2297,6 +2299,8 @@ aexp2   :: { LHsExpr RdrName }
                                       (if (hasE $1) then [mj AnnOpenE $1,mc $3] else [mo $1,mc $3]) }
         | '[||' exp '||]'     {% ams (sLL $1 $> $ HsBracket (TExpBr $2))
                                       (if (hasE $1) then [mj AnnOpenE $1,mc $3] else [mo $1,mc $3]) }
+        | '[n|' exp '|]'      {% ams (sLL $1 $> $ HsBracket (NativBr $2))
+                                      ([mo $1,mc $3]) }
         | '[t|' ctype '|]'    {% ams (sLL $1 $> $ HsBracket (TypBr $2)) [mo $1,mc $3] }
         | '[p|' infixexp '|]' {% checkPattern empty $2 >>= \p ->
                                       ams (sLL $1 $> $ HsBracket (PatBr p))
@@ -2322,6 +2326,8 @@ splice_exp :: { LHsExpr RdrName }
                                                         (getTH_ID_TY_SPLICE $1)))))
                                        [mj AnnThIdTySplice $1] }
         | '$$(' exp ')'         {% ams (sLL $1 $> $ mkHsSpliceTE $2)
+                                       [mj AnnOpenPTE $1,mj AnnCloseP $3] }
+        | '$n(' exp ')'         {% ams (sLL $1 $> $ mkHsSpliceNE $2)
                                        [mj AnnOpenPTE $1,mj AnnCloseP $3] }
 
 cmdargs :: { [LHsCmdTop RdrName] }

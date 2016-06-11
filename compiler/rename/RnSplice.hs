@@ -162,6 +162,9 @@ rn_bracket _ (DecBrG _) = panic "rn_bracket: unexpected DecBrG"
 rn_bracket _ (TExpBr e) = do { (e', fvs) <- rnLExpr e
                              ; return (TExpBr e', fvs) }
 
+rn_bracket _ (NativBr e) = do { (e', fvs) <- rnLExpr e
+                              ; return (NativBr e', fvs) }
+
 quotationCtxtDoc :: HsBracket RdrName -> SDoc
 quotationCtxtDoc br_body
   = hang (text "In the Template Haskell quotation")
@@ -289,6 +292,7 @@ runRnSplice flavour run_meta ppr_res splice
 
        ; let the_expr = case splice' of
                   HsUntypedSplice _ e     ->  e
+                  HsNativSplice   _ e     ->  e
                   HsQuasiQuote _ q qs str -> mkQuasiQuoteExpr flavour q qs str
                   HsTypedSplice {}        -> pprPanic "runRnSplice" (ppr splice)
 
@@ -359,6 +363,13 @@ rnSplice (HsTypedSplice splice_name expr)
         ; n' <- newLocalBndrRn (L loc splice_name)
         ; (expr', fvs) <- rnLExpr expr
         ; return (HsTypedSplice n' expr', fvs) }
+
+rnSplice (HsNativSplice splice_name expr)
+  = do  { checkTH expr "Template Haskell native splice"
+        ; loc  <- getSrcSpanM
+        ; n' <- newLocalBndrRn (L loc splice_name)
+        ; (expr', fvs) <- rnLExpr expr
+        ; return (HsNativSplice n' expr', fvs) }
 
 rnSplice (HsUntypedSplice splice_name expr)
   = do  { checkTH expr "Template Haskell untyped splice"
@@ -582,6 +593,7 @@ spliceCtxt splice
              HsUntypedSplice {} -> text "untyped splice:"
              HsTypedSplice   {} -> text "typed splice:"
              HsQuasiQuote    {} -> text "quasi-quotation:"
+             HsNativSplice   {} -> text "native splice:"
 
 -- | The splice data to be logged
 data SpliceInfo
