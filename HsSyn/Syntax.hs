@@ -256,54 +256,54 @@ data Decl id
 
   | VectD (VectDecl id)
 
-data Type name
-  = ForAllTy [LTyVarBndr name] (LType name)
+data Type id
+  = ForAllTy [LTyVarBndr id] (LType id)
 
-  | FunTy (LType name) (LType name)
+  | FunTy (LType id) (LType id)
 
-  | TupleTy TupleSort [LType name]
+  | TupleTy TupleSort [LType id]
 
-  | ListTy (LType name)
+  | ListTy (LType id)
 
-  | PArrTy (LType name)
+  | PArrTy (LType id)
 
-  | AppTy (LType name) (LType name)
+  | AppTy (LType id) (LType id)
 
-  | TyVar (Located name)
+  | TyVar (Located id)
 
  -- HSE.TyCon (part of above)
 
-  | ParTy (LType name)
+  | ParTy (LType id)
 
-  | KindSig (LType name) (LKind name)
+  | KindSig (LType id) (LKind id)
 
-  | BangTy SrcBang (LType name)
+  | BangTy SrcBang (LType id)
 
-  | WildCardTy (WildCardInfo name)
+  | WildCardTy (WildCardInfo id)
 
-  | EqTy (LType name) (LType name)
+  | EqTy (LType id) (LType id)
 
-  | SpliceTy (Splice name) (PostTc name TCRKind)
+  | SpliceTy (Splice id) (PostTc id TCRKind)
 
-  | OpTy (LType name) (Located name) (LType name) -- match?
+  | OpTy (LType id) (Located id) (LType id) -- match?
 
   | TyLit TyLit
 --  TyLit.Num
 --  TyLit.String
-  | AppsTy [LAppType name] -- assuming it is promoted constructors
-  | ExplicitListTy (PostTc name TCRKind) [LType name]
-  | ExplicitTupleTy [PostTc name TCRKind] [LType name]
+  | AppsTy [LAppType id] -- assuming it is promoted constructors
+  | ExplicitListTy (PostTc id TCRKind) [LType id]
+  | ExplicitTupleTy [PostTc id TCRKind] [LType id]
 --  HSE.Promoted.PromotedUnit (ExplicitTupleTy [] []?)
 
 --  HSE.TyQuasiQuote (missing?)
 
-  | QualTy (LContext name) (LType name)
+  | QualTy (LContext id) (LType id)
 
-  | IParamTy IPName (LType name)
+  | IParamTy IPName (LType id)
 
-  | DocTy (LType name) LDocString
+  | DocTy (LType id) LDocString
 
-  | RecTy [LConDeclField name]
+  | RecTy [LConDeclField id]
 
   | CoreTy TCRType
 
@@ -319,14 +319,14 @@ type LCmd id               = Located (Cmd id)
 type LCmdTop id            = Located (CmdTop id)
 type LMatch id body        = Located (Match id body)
 type LDecl id              = Located (Decl id)
-type LBangType name        = Located (BangType name)
-type LContext name         = Located (Context name)
-type LType name            = Located (Type name)
-type LKind name            = Located (Kind name)
-type LConDeclField name    = Located (ConDeclField name)
-type LTyVarBndr name       = Located (TyVarBndr name)
-type LAppType name         = Located (AppType name)
-type LFieldOcc name        = Located (FieldOcc name)
+type LBangType id        = Located (BangType id)
+type LContext id         = Located (Context id)
+type LType id            = Located (Type id)
+type LKind id            = Located (Kind id)
+type LConDeclField id    = Located (ConDeclField id)
+type LTyVarBndr id       = Located (TyVarBndr id)
+type LAppType id         = Located (AppType id)
+type LFieldOcc id        = Located (FieldOcc id)
 type LGRHS id body         = Located (GRHS id body)
 type LStmt id body         = Located (StmtLR id id body)
 type LStmtLR idL idR body  = Located (StmtLR idL idR body)
@@ -335,37 +335,37 @@ type LRecField' id arg     = Located (RecField' id arg)
 type LRecField id arg      = Located (RecField id arg)
 type LRecUpdField id       = Located (RecUpdField id)
 type LDocString            = Located DocString
-type LImportDecl      name = Located (ImportDecl name)
-type LIE name              = Located (IE name)
+type LImportDecl      id = Located (ImportDecl id)
+type LIE id              = Located (IE id)
 type LBindLR       idL idR = Located (BindLR idL idR)
 type LIPBind            id = Located (IPBind id)
-type LSig             name = Located (Sig name)
-type LFixitySig       name = Located (FixitySig name)
+type LSig             id = Located (Sig id)
+type LFixitySig       id = Located (FixitySig id)
 type LTcSpecPrag           = Located TcSpecPrag
-type LSpliceDecl      name = Located (SpliceDecl name)
-type LTyClDecl        name = Located (TyClDecl name)
-type LFamilyResultSig name = Located (FamilyResultSig name)
-type LFamilyDecl      name = Located (FamilyDecl name)
-type LInjectivityAnn  name = Located (InjectivityAnn name)
-type LConDecl         name = Located (ConDecl name)
-type LTyFamInstEqn    name = Located (TyFamInstEqn name)
-type LTyFamDefltEqn   name = Located (TyFamDefltEqn name)
-type LTyFamInstDecl   name = Located (TyFamInstDecl name)
-type LDataFamInstDecl name = Located (DataFamInstDecl name)
-type LClsInstDecl     name = Located (ClsInstDecl name)
-type LInstDecl        name = Located (InstDecl name)
-type LDerivDecl       name = Located (DerivDecl name)
-type LDefaultDecl     name = Located (DefaultDecl name)
-type LForeignDecl     name = Located (ForeignDecl name)
-type LRuleDecls       name = Located (RuleDecls name)
-type LRuleDecl        name = Located (RuleDecl name)
-type LRuleBndr        name = Located (RuleBndr name)
-type LVectDecl        name = Located (VectDecl name)
+type LSpliceDecl      id = Located (SpliceDecl id)
+type LTyClDecl        id = Located (TyClDecl id)
+type LFamilyResultSig id = Located (FamilyResultSig id)
+type LFamilyDecl      id = Located (FamilyDecl id)
+type LInjectivityAnn  id = Located (InjectivityAnn id)
+type LConDecl         id = Located (ConDecl id)
+type LTyFamInstEqn    id = Located (TyFamInstEqn id)
+type LTyFamDefltEqn   id = Located (TyFamDefltEqn id)
+type LTyFamInstDecl   id = Located (TyFamInstDecl id)
+type LDataFamInstDecl id = Located (DataFamInstDecl id)
+type LClsInstDecl     id = Located (ClsInstDecl id)
+type LInstDecl        id = Located (InstDecl id)
+type LDerivDecl       id = Located (DerivDecl id)
+type LDefaultDecl     id = Located (DefaultDecl id)
+type LForeignDecl     id = Located (ForeignDecl id)
+type LRuleDecls       id = Located (RuleDecls id)
+type LRuleDecl        id = Located (RuleDecl id)
+type LRuleBndr        id = Located (RuleBndr id)
+type LVectDecl        id = Located (VectDecl id)
 type LDocDecl              = Located (DocDecl)
-type LWarnDecls       name = Located (WarnDecls name)
-type LWarnDecl        name = Located (WarnDecl name)
-type LAnnDecl         name = Located (AnnDecl name)
-type LRoleAnnotDecl   name = Located (RoleAnnotDecl name)
+type LWarnDecls       id = Located (WarnDecls id)
+type LWarnDecl        id = Located (WarnDecl id)
+type LAnnDecl         id = Located (AnnDecl id)
+type LRoleAnnotDecl   id = Located (RoleAnnotDecl id)
 type LModuleName           = Located ModuleName
 type LIPName               = Located IPName
 type LSplice id            = Located (Splice id)
@@ -380,13 +380,13 @@ type LConLike              = Located ConLike
 type LExpLStmts id         = Located [ExpLStmt id]
 type LCmdLStmts id         = Located [CmdLStmt id]
 type LLMatchs id body      = Located [LMatch id body]
-type LLIEs name            = Located [LIE name]
-type LFieldLbl name        = Located (FieldLbl name)
-type LLSigTypes name       = Located [LSigType name]
-type LLConDeclFields name  = Located [LConDeclField name]
+type LLIEs id            = Located [LIE id]
+type LFieldLbl id        = Located (FieldLbl id)
+type LLSigTypes id       = Located [LSigType id]
+type LLConDeclFields id  = Located [LConDeclField id]
 type LRdrName              = Located RdrName
 type LName                 = Located Name
-type LFunDepL name         = Located (FunDep (Located name))
+type LFunDepL id         = Located (FunDep (Located id))
 type LSrcTextRuleName      = Located (SourceText, RuleName)
 type LMRole                = Located (Maybe Role)
 type LLocalBinds id        = Located (LocalBinds id)
@@ -636,16 +636,16 @@ newtype DocString = DocString FastString
 --------------------------------------------------------------------------------
 -- ImpExp
 
-data ImportDecl name
+data ImportDecl id
   = ImportDecl (Maybe SourceText) LModuleName
                (Maybe StringLiteral) Bool Bool Bool Bool
-               (Maybe ModuleName) (Maybe (Bool, LLIEs name))
+               (Maybe ModuleName) (Maybe (Bool, LLIEs id))
 
-data IE name
-  = IEVar (Located name)
-  | IEThingAbs (Located name)
-  | IEThingAll (Located name)
-  | IEThingWith (Located name) IEWildcard [Located name] [LFieldLbl name]
+data IE id
+  = IEVar (Located id)
+  | IEThingAbs (Located id)
+  | IEThingAll (Located id)
+  | IEThingWith (Located id) IEWildcard [Located id] [LFieldLbl id]
   | IEModuleContents LModuleName
   | IEGroup Int DocString
   | IEDoc DocString
@@ -702,19 +702,19 @@ data IPBinds id
 data IPBind id
   = IPBind (Either LIPName id) (LExp id)
 
-data Sig name
-  = TypeSig [Located name] (LSigWcType name)
-  | PatSynSig (Located name) (LSigType name)
-  | ClassOpSig Bool [Located name] (LSigType name)
+data Sig id
+  = TypeSig [Located id] (LSigWcType id)
+  | PatSynSig (Located id) (LSigType id)
+  | ClassOpSig Bool [Located id] (LSigType id)
   | IdSig Id
-  | FixSig (FixitySig name)
-  | InlineSig (Located name) InlinePragma
-  | SpecSig (Located name) [LSigType name] InlinePragma
-  | SpecInstSig SourceText (LSigType name)
-  | MinimalSig SourceText (LBooleanFormula (Located name))
+  | FixSig (FixitySig id)
+  | InlineSig (Located id) InlinePragma
+  | SpecSig (Located id) [LSigType id] InlinePragma
+  | SpecInstSig SourceText (LSigType id)
+  | MinimalSig SourceText (LBooleanFormula (Located id))
 
-data FixitySig name
-  = FixitySig [Located name] Fixity
+data FixitySig id
+  = FixitySig [Located id] Fixity
 
 data TcSpecPrags
   = IsDefaultMethod
@@ -751,90 +751,90 @@ data SpliceExplicitFlag
 data SpliceDecl id
   = SpliceDecl (LSplice id) SpliceExplicitFlag
 
-data TyClDecl name
-  = FamDecl (FamilyDecl name)
-  | SynDecl (Located name) (LQTyVars name) (LType name) (PostRn name NameSet)
-  | DataDecl (Located name) (LQTyVars name) (DataDefn name) (PostRn name Bool)
-             (PostRn name NameSet)
-  | ClassDecl (LContext name) (Located name) (LQTyVars name)
-              [LFunDepL name] [LSig name] (LBinds name)
-              [LFamilyDecl name] [LTyFamDefltEqn name] [LDocDecl]
-              (PostRn name NameSet)
+data TyClDecl id
+  = FamDecl (FamilyDecl id)
+  | SynDecl (Located id) (LQTyVars id) (LType id) (PostRn id NameSet)
+  | DataDecl (Located id) (LQTyVars id) (DataDefn id) (PostRn id Bool)
+             (PostRn id NameSet)
+  | ClassDecl (LContext id) (Located id) (LQTyVars id)
+              [LFunDepL id] [LSig id] (LBinds id)
+              [LFamilyDecl id] [LTyFamDefltEqn id] [LDocDecl]
+              (PostRn id NameSet)
 
-data TyClGroup name
-  = TyClGroup [LTyClDecl name] [LRoleAnnotDecl name] [LInstDecl name]
+data TyClGroup id
+  = TyClGroup [LTyClDecl id] [LRoleAnnotDecl id] [LInstDecl id]
 
 -- KingSig --> KindSig'
-data FamilyResultSig name
+data FamilyResultSig id
   = NoSig
-  | KindSig' (LKind name)
-  | TyVarSig (LTyVarBndr name)
+  | KindSig' (LKind id)
+  | TyVarSig (LTyVarBndr id)
 
-data FamilyDecl name
-  = FamilyDecl (FamilyInfo name) (Located name) (LQTyVars name)
-               (LFamilyResultSig name) (Maybe (LInjectivityAnn name))
+data FamilyDecl id
+  = FamilyDecl (FamilyInfo id) (Located id) (LQTyVars id)
+               (LFamilyResultSig id) (Maybe (LInjectivityAnn id))
 
-data InjectivityAnn name
-  = InjectivityAnn (Located name) [Located name]
+data InjectivityAnn id
+  = InjectivityAnn (Located id) [Located id]
 
-data FamilyInfo name
+data FamilyInfo id
   = DataFamily
   | OpenTypeFamily
-  | ClosedTypeFamily (Maybe [LTyFamInstEqn name])
+  | ClosedTypeFamily (Maybe [LTyFamInstEqn id])
 
-data DataDefn name
-  = DataDefn NewOrData (LContext name) (Maybe LCType)
-             (Maybe (LKind name)) [LConDecl name] (Deriving name)
+data DataDefn id
+  = DataDefn NewOrData (LContext id) (Maybe LCType)
+             (Maybe (LKind id)) [LConDecl id] (Deriving id)
 
-type Deriving name = Maybe (LLSigTypes name)
+type Deriving id = Maybe (LLSigTypes id)
 
 data NewOrData
   = NewType
   | DataType
 
-data ConDecl name
-  = ConDeclGADT [Located name] (LSigType name) (Maybe LDocString)
-  | ConDeclH98 (Located name) (Maybe (LQTyVars name)) (Maybe (LContext name))
-               (ConDeclDetails name) (Maybe LDocString)
+data ConDecl id
+  = ConDeclGADT [Located id] (LSigType id) (Maybe LDocString)
+  | ConDeclH98 (Located id) (Maybe (LQTyVars id)) (Maybe (LContext id))
+               (ConDeclDetails id) (Maybe LDocString)
 
-type ConDeclDetails name =
-   ConDetails (LBangType name) (LLConDeclFields name)
+type ConDeclDetails id =
+   ConDetails (LBangType id) (LLConDeclFields id)
 
-type TyPats name = ImplicitBndrs name [LType name]
+type TyPats id = ImplicitBndrs id [LType id]
 
-type TyFamInstEqn name = TyFamEqn name (TyPats name)
+type TyFamInstEqn id = TyFamEqn id (TyPats id)
 
-type TyFamDefltEqn name = TyFamEqn name (LQTyVars name)
+type TyFamDefltEqn id = TyFamEqn id (LQTyVars id)
 
-data TyFamEqn name pats
-  = TyFamEqn (Located name) pats (LType name)
+data TyFamEqn id pats
+  = TyFamEqn (Located id) pats (LType id)
 
-data TyFamInstDecl name
-  = TyFamInstDecl (LTyFamInstEqn name) (PostRn name NameSet)
+data TyFamInstDecl id
+  = TyFamInstDecl (LTyFamInstEqn id) (PostRn id NameSet)
 
-data DataFamInstDecl name
-  = DataFamInstDecl (Located name) (TyPats name) (DataDefn name)
-                    (PostRn name NameSet)
+data DataFamInstDecl id
+  = DataFamInstDecl (Located id) (TyPats id) (DataDefn id)
+                    (PostRn id NameSet)
 
-data ClsInstDecl name
-  = ClsInstDecl (LSigType name) (LBinds name) [LSig name] [LTyFamInstDecl name]
-                [LDataFamInstDecl name] (Maybe LOverlapMode)
+data ClsInstDecl id
+  = ClsInstDecl (LSigType id) (LBinds id) [LSig id] [LTyFamInstDecl id]
+                [LDataFamInstDecl id] (Maybe LOverlapMode)
 
-data InstDecl name
-  = ClsInstD (ClsInstDecl name)
-  | DataFamInstD (DataFamInstDecl name)
-  | TyFamInstD (TyFamInstDecl name)
+data InstDecl id
+  = ClsInstD (ClsInstDecl id)
+  | DataFamInstD (DataFamInstDecl id)
+  | TyFamInstD (TyFamInstDecl id)
 
-data DerivDecl name
-  = DerivDecl (LSigType name) (Maybe LOverlapMode)
+data DerivDecl id
+  = DerivDecl (LSigType id) (Maybe LOverlapMode)
 
-data DefaultDecl name
-  = DefaultDecl [LType name]
+data DefaultDecl id
+  = DefaultDecl [LType id]
 
-data ForeignDecl name
-  = ForeignImport (Located name) (LSigType name) (PostTc name Coercion)
+data ForeignDecl id
+  = ForeignImport (Located id) (LSigType id) (PostTc id Coercion)
                   ForeignImport
-  | ForeignExport (Located name) (LSigType name) (PostTc name Coercion)
+  | ForeignExport (Located id) (LSigType id) (PostTc id Coercion)
                   ForeignExport
 
 data ForeignImport
@@ -848,26 +848,26 @@ data CImportSpec
 data ForeignExport
   = CExport LCExportSpec LSourceText
 
-data RuleDecls name
-  = Rules SourceText [LRuleDecl name]
+data RuleDecls id
+  = Rules SourceText [LRuleDecl id]
 
-data RuleDecl name
+data RuleDecl id
   = Rule LSrcTextRuleName
-         Activation [LRuleBndr name] (LExp name)
-         (PostRn name NameSet) (LExp name) (PostRn name NameSet)
+         Activation [LRuleBndr id] (LExp id)
+         (PostRn id NameSet) (LExp id) (PostRn id NameSet)
 
-data RuleBndr name
-  = RuleBndr (Located name)
-  | RuleBndrSig (Located name) (LSigWcType name)
+data RuleBndr id
+  = RuleBndr (Located id)
+  | RuleBndrSig (Located id) (LSigWcType id)
 
-data VectDecl name
-  = Vect SourceText (Located name) (LExp name)
-  | NoVect SourceText (Located name)
-  | VectTypeIn SourceText Bool (Located name) (Maybe (Located name))
+data VectDecl id
+  = Vect SourceText (Located id) (LExp id)
+  | NoVect SourceText (Located id)
+  | VectTypeIn SourceText Bool (Located id) (Maybe (Located id))
   | VectTypeOut Bool TyCon (Maybe TyCon)
-  | VectClassIn SourceText (Located name)
+  | VectClassIn SourceText (Located id)
   | VectClassOut Class
-  | VectInstIn (LSigType name)
+  | VectInstIn (LSigType id)
   | VectInstOut ClsInst
 
 data DocDecl
@@ -876,63 +876,63 @@ data DocDecl
   | DocCommentNamed String DocString
   | DocGroup Int DocString
 
-data WarnDecls name
-  = Warnings SourceText [LWarnDecl name]
+data WarnDecls id
+  = Warnings SourceText [LWarnDecl id]
 
-data WarnDecl name
-  = Warning [Located name] WarningTxt
+data WarnDecl id
+  = Warning [Located id] WarningTxt
 
-data AnnDecl name
-  = Annotation SourceText (AnnProvenance name) (LExp name)
+data AnnDecl id
+  = Annotation SourceText (AnnProvenance id) (LExp id)
 
-data AnnProvenance name
-  = ValueAnnProvenance (Located name)
-  | TypeAnnProvenance (Located name)
+data AnnProvenance id
+  = ValueAnnProvenance (Located id)
+  | TypeAnnProvenance (Located id)
   | ModuleAnnProvenance
 
-data RoleAnnotDecl name
-  = RoleAnnotDecl (Located name) [LMRole]
+data RoleAnnotDecl id
+  = RoleAnnotDecl (Located id) [LMRole]
 
 -------------------------------------------------------------------------------
 -- Types
 
-type BangType name = Type name
+type BangType id = Type id
 
-type Context name = [LType name]
+type Context id = [LType id]
 
-type Kind name = Type name
+type Kind id = Type id
 
-data LQTyVars name
-  = QTvs (PostRn name [Name]) [LTyVarBndr name] (PostRn name NameSet)
+data LQTyVars id
+  = QTvs (PostRn id [Name]) [LTyVarBndr id] (PostRn id NameSet)
 
-data ImplicitBndrs name thing
-  = IB (PostRn name [Name]) thing
+data ImplicitBndrs id thing
+  = IB (PostRn id [Name]) thing
 
-data WildCardBndrs name thing
-  = WC (PostRn name [Name]) (Maybe SrcSpan) thing
+data WildCardBndrs id thing
+  = WC (PostRn id [Name]) (Maybe SrcSpan) thing
 
-type LSigType name = ImplicitBndrs name (LType name)
+type LSigType id = ImplicitBndrs id (LType id)
 
-type LWcType name = WildCardBndrs name (LType name)
+type LWcType id = WildCardBndrs id (LType id)
 
-type LSigWcType name = ImplicitBndrs name (LWcType name)
+type LSigWcType id = ImplicitBndrs id (LWcType id)
 
 newtype IPName = IPName FastString
 
-data TyVarBndr name
-  = UserTyVar (Located name)
-  | KindedTyVar (Located name) (LKind name)
+data TyVarBndr id
+  = UserTyVar (Located id)
+  | KindedTyVar (Located id) (LKind id)
 
 data TyLit
   = NumTy SourceText Integer
   | StrTy SourceText FastString
 
-newtype WildCardInfo name
-  = AnonWildCard (PostRn name LName)
+newtype WildCardInfo id
+  = AnonWildCard (PostRn id LName)
 
-data AppType name
-  = AppInfix (Located name)
-  | AppPrefix (LType name)
+data AppType id
+  = AppInfix (Located id)
+  | AppPrefix (LType id)
 
 data TupleSort
   = UnboxedTuple
@@ -940,17 +940,17 @@ data TupleSort
   | ConstraintTuple
   | BoxedOrConstraintTuple
 
-data ConDeclField name
-  = ConDeclField [LFieldOcc name] (LBangType name) (Maybe LDocString)
+data ConDeclField id
+  = ConDeclField [LFieldOcc id] (LBangType id) (Maybe LDocString)
 
 data ConDetails arg rec
   = PrefixCon [arg]
   | RecCon rec
   | InfixCon arg arg
 
-data FieldOcc name
-  = FieldOcc LRdrName (PostRn name name)
+data FieldOcc id
+  = FieldOcc LRdrName (PostRn id id)
 
-data AmbiguousFieldOcc name
-  = Unambiguous LRdrName (PostRn name name)
-  | Ambiguous LRdrName (PostTc name name)
+data AmbiguousFieldOcc id
+  = Unambiguous LRdrName (PostRn id id)
+  | Ambiguous LRdrName (PostTc id id)
