@@ -178,3 +178,4 @@ GIT_COMMIT_ID
 .bash_history
 /.ghc
 /.cache
+/.local
