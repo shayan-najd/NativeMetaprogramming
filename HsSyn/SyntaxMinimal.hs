@@ -17,7 +17,7 @@ data Exp id
 
   | NegApp   (LExp id) (SyntaxExp id)
 
-  | OpApp    (LExp id) (LExp id) (PostRn id Fixity) (LExp id)
+  | OpApp    (LExp id) (LExp id) (LExp id)
 
   | AppType    (LExp id) (LWcType id)
   | AppTypeOut (LExp id) (LWcType Name)
@@ -26,7 +26,7 @@ data Exp id
 
   | If       (Maybe (SyntaxExp id)) (LExp id) (LExp id) (LExp id)
 
-  | MultiIf  (PostTc id TCRType) [LGRHS id (LExp id)]
+  | MultiIf  [LGRHS id (LExp id)]
 
   | Case     (LExp id) (MatchGroup id (LExp id))
 
@@ -42,31 +42,30 @@ data Exp id
 
   | OverLabel FastString
 
-  | RecordCon (Located id) (PostTc id ConLike) PostTcExp (RecordBinds id)
+  | RecordCon (Located id) (RecordBinds id)
 
-  | RecordUpd (LExp id) [LRecUpdField id] (PostTc id [ConLike])
-              (PostTc id [TCRType]) (PostTc id [TCRType]) (PostTc id Wrapper)
+  | RecordUpd (LExp id) [LRecUpdField id]
 
   | ExplicitTuple [LTupArg id] Boxity
 --  HSE.TupleSection (part of above?)
 
-  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp id)) [LExp id]
+  | ExplicitList (Maybe (SyntaxExp id)) [LExp id]
 
-  | ExplicitPArr (PostTc id TCRType) [LExp id]
+  | ExplicitPArr [LExp id]
 
-  | ArithSeq  PostTcExp (Maybe (SyntaxExp id)) (ArithSeqInfo id)
+  | ArithSeq  (Maybe (SyntaxExp id)) (ArithSeqInfo id)
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
 
-  | PArrSeq   PostTcExp (ArithSeqInfo id) -- expanding ArithSeqInfo below
+  | PArrSeq  (ArithSeqInfo id) -- expanding ArithSeqInfo below
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
 
-  | Do           (StmtContext Name) (LExpLStmts id) (PostTc id TCRType)
+  | Do           (StmtContext Name) (LExpLStmts id)
 --  StmtContext.ListComp
 --  StmtContext.MonadComp
 --  StmtContext.ParArrComp
@@ -99,7 +98,7 @@ data Exp id
 
   | Proc      (LPat id) (LCmdTop id)
 
-  | ArrApp    (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
+  | ArrApp    (LExp id) (LExp id) ArrAppType Bool
 --  HSE.LeftArrHighApp (don't know how they compare)
   | ArrForm   (LExp id) (Maybe Fixity) [LCmdTop id]
 --  HSE.RightArrHighApp (don't know how they compare)
@@ -121,27 +120,26 @@ data Exp id
   | Wrap      Wrapper (Exp id)
 
 data Pat id
-  = WildPat   (PostTc id TCRType)
+  = WildPat
 
   | VarPat    (Located id)
 
   | LitPat    Lit
-  | NPat      (LOverLit id)
-              (Maybe (SyntaxExp id))  (SyntaxExp id) (PostTc id TCRType)
+  | NPat      (LOverLit id) (Maybe (SyntaxExp id))  (SyntaxExp id)
 
   | NPlusKPat (Located id) (LOverLit id) (OverLit id) (SyntaxExp id)
-              (SyntaxExp id) (PostTc id TCRType)
+              (SyntaxExp id)
 
-  | TuplePat  [LPat id] Boxity [PostTc id TCRType]
+  | TuplePat  [LPat id] Boxity
 
-  | ListPat   [LPat id] (PostTc id TCRType)
-              (Maybe (PostTc id TCRType, SyntaxExp id))
+  | ListPat   [LPat id]
+              (Maybe (SyntaxExp id))
 
   | ParPat    (LPat id)
 
   | AsPat     (Located id) (LPat id)
 
-  | ViewPat   (LExp id) (LPat id) (PostTc id TCRType)
+  | ViewPat   (LExp id) (LPat id)
 
   | BangPat   (LPat id)
 
@@ -150,7 +148,7 @@ data Pat id
   | SigPatIn  (LPat id) (LSigWcType id)
   | SigPatOut (LPat id) TCRType
 
-  | PArrPat   [LPat id] (PostTc id TCRType)
+  | PArrPat   [LPat id]
 
   | ConPatIn  (Located id) (ConPatDetails id)
   | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds (ConPatDetails id)
@@ -283,7 +281,7 @@ data Type id
 
   | EqTy (LType id) (LType id)
 
-  | SpliceTy (Splice id) (PostTc id TCRKind)
+  | SpliceTy (Splice id)
 
   | OpTy (LType id) (Located id) (LType id) -- match?
 
@@ -291,8 +289,8 @@ data Type id
 --  TyLit.Num
 --  TyLit.String
   | AppsTy [LAppType id] -- assuming it is promoted constructors
-  | ExplicitListTy (PostTc id TCRKind) [LType id]
-  | ExplicitTupleTy [PostTc id TCRKind] [LType id]
+  | ExplicitListTy  [LType id]
+  | ExplicitTupleTy [LType id]
 --  HSE.Promoted.PromotedUnit (ExplicitTupleTy [] []?)
 
 --  HSE.TyQuasiQuote (missing?)
@@ -405,8 +403,6 @@ data Wrapper
 data GlobalRdrEnv
 data ByteString
 data FastString
-data PostRn a b
-data PostTc a b
 data Fixity
 data Boxity
 data ConLike
@@ -447,16 +443,12 @@ data SrcBang
 data RdrName
 
 data OverLit id
-  = OverLit' OverLitVal (PostRn id Bool) (Exp id) (PostTc id TCRType)
+  = OverLit' OverLitVal (Exp id)
 
 data OverLitVal
   = Integral   !SourceText !Integer
   | Fractional !FractionalLit
   | IsString   !SourceText !FastString
-
-type PostTcExp   = Exp Id
-
-type PostTcTable = [(Name, PostTcExp)]
 
 data SyntaxExp id
   = SyntaxExp (Exp id) [Wrapper] Wrapper
@@ -469,13 +461,13 @@ data UnboundVar
 
 data TupArg id
   = Present (LExp id)
-  | Missing (PostTc id TCRType)
+  | Missing
 
 data LWcTypeX
   = forall id. OutputableBndr id => LWcTypeX (LWcType id)
 
 data Cmd id
-  = CmdArrApp  (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
+  = CmdArrApp  (LExp id) (LExp id) ArrAppType Bool
   | CmdArrForm (LExp id) (Maybe Fixity) [LCmdTop id]
   | CmdApp     (LCmd id)  (LExp id)
   | CmdLam     (MatchGroup id (LCmd id))
@@ -483,7 +475,7 @@ data Cmd id
   | CmdCase    (LExp id) (MatchGroup id (LCmd id))
   | CmdIf      (Maybe (SyntaxExp id)) (LExp id) (LCmd id) (LCmd id)
   | CmdLet     (LLocalBinds id) (LCmd  id)
-  | CmdDo      (LCmdLStmts id) (PostTc id TCRType)
+  | CmdDo      (LCmdLStmts id)
   | CmdWrap    Wrapper (Cmd id)
 
 data ArrAppType
@@ -491,13 +483,13 @@ data ArrAppType
   | FirstOrderApp
 
 data CmdTop id
-  = CmdTop (LCmd id) (PostTc id TCRType) (PostTc id TCRType)
+  = CmdTop (LCmd id)
            (CmdSyntaxTable id)
 
 type RecordBinds id = RecFields id (LExp id)
 
 data MatchGroup id body
-  = MG (LLMatchs id body) [PostTc id TCRType] (PostTc id TCRType) Origin
+  = MG (LLMatchs id body) Origin
 
 data Match id body
   = Match (MatchFixity id) [LPat id] (Maybe (LType id)) (GRHSs id body)
@@ -525,19 +517,16 @@ type GhciStmt   id = Stmt  id (LExp id)
 data StmtLR idL idR body
   = LastStmt body Bool (SyntaxExp idR)
   | BindStmt (LPat idL) body (SyntaxExp idR) (SyntaxExp idR)
-             (PostTc idR TCRType)
   | ApplicativeStmt [(SyntaxExp idR, ApplicativeArg idL idR)]
-                    (Maybe (SyntaxExp idR)) (PostTc idR TCRType)
-  | BodyStmt body (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType)
+                    (Maybe (SyntaxExp idR))
+  | BodyStmt body (SyntaxExp idR) (SyntaxExp idR)
   | LetStmt  (LLocalBindsLR idL idR)
   | ParStmt  [ParStmtBlock idL idR] (Exp idR) (SyntaxExp idR)
-             (PostTc idR TCRType)
+
   | TransStmt TransForm [ExpLStmt idL] [(idR, idR)] (LExp idR)
-              (Maybe (LExp idR))
-              (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType) (Exp idR)
+              (Maybe (LExp idR)) (SyntaxExp idR) (SyntaxExp idR)  (Exp idR)
   | RecStmt [LStmtLR idL idR body] [idR] [idR] (SyntaxExp idR)
-            (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType)
-            [PostTcExp] [PostTcExp] (PostTc idR TCRType)
+            (SyntaxExp idR) (SyntaxExp idR)
 
 data TransForm
   = ThenForm
@@ -680,9 +669,9 @@ type Bind id = BindLR id id
 
 data BindLR idL idR
   = FunBind (Located idL) (MatchGroup idR (LExp idR)) Wrapper
-            (PostRn idL NameSet) [Tickish Id]
-  | PatBind (LPat idL) (GRHSs idR (LExp idR)) (PostTc idR TCRType)
-            (PostRn idL NameSet) ([Tickish Id], [[Tickish Id]])
+             [Tickish Id]
+  | PatBind (LPat idL) (GRHSs idR (LExp idR))
+            ([Tickish Id], [[Tickish Id]])
   | VarBind idL (LExp idR) Bool
   | AbsBinds [TyVar] [EvVar] [ABExport idL] [TcEvBinds] (LBinds idL)
   | AbsBindsSig [TyVar] [EvVar] idL TcSpecPrags TcEvBinds (LBind idL)
@@ -692,7 +681,7 @@ data ABExport id
   = ABE id id Wrapper TcSpecPrags
 
 data PatSynBind idL idR
-  = PSB (Located idL) (PostRn idR NameSet) (PatSynDetails (Located idR))
+  = PSB (Located idL) (PatSynDetails (Located idR))
         (LPat idR)    (PatSynDir idR)
 
 -- IPBinds'
@@ -753,13 +742,12 @@ data SpliceDecl id
 
 data TyClDecl id
   = FamDecl (FamilyDecl id)
-  | SynDecl (Located id) (LQTyVars id) (LType id) (PostRn id NameSet)
-  | DataDecl (Located id) (LQTyVars id) (DataDefn id) (PostRn id Bool)
-             (PostRn id NameSet)
+  | SynDecl (Located id) (LQTyVars id) (LType id)
+  | DataDecl (Located id) (LQTyVars id) (DataDefn id)
   | ClassDecl (LContext id) (Located id) (LQTyVars id)
               [LFunDepL id] [LSig id] (LBinds id)
               [LFamilyDecl id] [LTyFamDefltEqn id] [LDocDecl]
-              (PostRn id NameSet)
+
 
 data TyClGroup id
   = TyClGroup [LTyClDecl id] [LRoleAnnotDecl id] [LInstDecl id]
@@ -810,11 +798,10 @@ data TyFamEqn id pats
   = TyFamEqn (Located id) pats (LType id)
 
 data TyFamInstDecl id
-  = TyFamInstDecl (LTyFamInstEqn id) (PostRn id NameSet)
+  = TyFamInstDecl (LTyFamInstEqn id)
 
 data DataFamInstDecl id
   = DataFamInstDecl (Located id) (TyPats id) (DataDefn id)
-                    (PostRn id NameSet)
 
 data ClsInstDecl id
   = ClsInstDecl (LSigType id) (LBinds id) [LSig id] [LTyFamInstDecl id]
@@ -832,10 +819,8 @@ data DefaultDecl id
   = DefaultDecl [LType id]
 
 data ForeignDecl id
-  = ForeignImport (Located id) (LSigType id) (PostTc id Coercion)
-                  ForeignImport
-  | ForeignExport (Located id) (LSigType id) (PostTc id Coercion)
-                  ForeignExport
+  = ForeignImport (Located id) (LSigType id) ForeignImport
+  | ForeignExport (Located id) (LSigType id) ForeignExport
 
 data ForeignImport
   = CImport LCCallConv LSafety (Maybe Header) CImportSpec LSourceText
@@ -854,7 +839,7 @@ data RuleDecls id
 data RuleDecl id
   = Rule LSrcTextRuleName
          Activation [LRuleBndr id] (LExp id)
-         (PostRn id NameSet) (LExp id) (PostRn id NameSet)
+         (LExp id)
 
 data RuleBndr id
   = RuleBndr (Located id)
@@ -903,13 +888,13 @@ type Context id = [LType id]
 type Kind id = Type id
 
 data LQTyVars id
-  = QTvs (PostRn id [Name]) [LTyVarBndr id] (PostRn id NameSet)
+  = QTvs [LTyVarBndr id]
 
 data ImplicitBndrs id thing
-  = IB (PostRn id [Name]) thing
+  = IB thing
 
 data WildCardBndrs id thing
-  = WC (PostRn id [Name]) (Maybe SrcSpan) thing
+  = WC (Maybe SrcSpan) thing
 
 type LSigType id = ImplicitBndrs id (LType id)
 
@@ -927,8 +912,8 @@ data TyLit
   = NumTy SourceText Integer
   | StrTy SourceText FastString
 
-newtype WildCardInfo id
-  = AnonWildCard (PostRn id LName)
+data WildCardInfo id
+  = AnonWildCard
 
 data AppType id
   = AppInfix (Located id)
@@ -949,8 +934,8 @@ data ConDetails arg rec
   | InfixCon arg arg
 
 data FieldOcc id
-  = FieldOcc LRdrName (PostRn id id)
+  = FieldOcc LRdrName
 
 data AmbiguousFieldOcc id
-  = Unambiguous LRdrName (PostRn id id)
-  | Ambiguous LRdrName (PostTc id id)
+  = Unambiguous LRdrName
+  | Ambiguous LRdrName
