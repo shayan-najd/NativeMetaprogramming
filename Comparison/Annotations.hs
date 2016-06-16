@@ -1,5 +1,6 @@
-{-# OPTIONS_GHC -Wall   #-}
-{-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wall         #-}
+{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Annotations where
 
 import Control.Monad.State
@@ -177,3 +178,79 @@ cnvAE'' = \case
   AbsR x n -> AbsR <$> pure x   <*> cnvAE' n
   AppR l m -> AppR <$> cnvAE' l <*> cnvAE' m
   TplR ms  -> TplR <$> mapM cnvAE' ms
+
+-- External <---> Product
+-------------------------
+
+-- External to Product
+cnvEP :: (Anns ann , AExpE id) -> ExpP id (Maybe ann)
+cnvEP (tbl , AnnR a m) = cnvEP' tbl (lookup a tbl) m
+
+cnvEP' :: Anns ann -> Maybe ann -> ExpE id -> ExpP id (Maybe ann)
+cnvEP' tbl a = \case
+  VarR x   -> VarP a x
+  AbsR x n -> AbsP a x (cnvEP (tbl , n))
+  AppR l m -> AppP a (cnvEP (tbl , l)) (cnvEP (tbl , m))
+  TplR ms  -> TplP a (map (\ m -> cnvEP (tbl , m)) ms)
+
+-- Product to External
+cnvPE :: ExpP id ann -> (Anns ann , AExpE id)
+cnvPE m = let (m' , (tbl, _)) = runState (cnvPE' m) ([] , 0)
+          in  (tbl , m')
+
+cnvPE' :: ExpP id ann -> State (Anns ann, UniqueIdentifier) (AExpE id)
+cnvPE' mm  = do
+  (tbl , i) <- get
+  let newId = i + 1
+  let f a   = put ((newId , a) : tbl, newId)
+  let m'    = case mm of
+                VarP a x   -> do f a
+                                 pure (VarR x)
+                AbsP a x n -> do f a
+                                 AbsR <$> pure x <*> cnvPE' n
+                AppP a l m -> do f a
+                                 AppR <$> cnvPE' l <*> cnvPE' m
+                TplP a ms  -> do f a
+                                 TplR <$> mapM cnvPE' ms
+  AnnR newId <$> m'
+
+
+-- External <---> Sum
+---------------------
+
+-- External to Sum
+cnvES :: (Anns ann , AExpE id) -> ExpS id ann
+cnvES (tbl , AnnR a m) = (maybe id AnnS (lookup a tbl)) (cnvES' tbl m)
+
+cnvES' :: Anns ann -> ExpE id  -> ExpS id ann
+cnvES' tbl = \case
+  VarR x   -> VarS x
+  AbsR x n -> AbsS x (cnvES (tbl , n))
+  AppR l m -> AppS (cnvES (tbl , l)) (cnvES (tbl , m))
+  TplR ms  -> TplS (map (\ m -> cnvES (tbl , m)) ms)
+
+-- Sum to External
+cnvSE :: ExpS id ann -> (Anns [ann] , AExpE id)
+cnvSE m = let (m' , (tbl, _)) = runState (cnvSE' m) ([] , 0)
+          in  (tbl , m')
+
+cnvSE' :: ExpS id ann -> State (Anns [ann], UniqueIdentifier) (AExpE id)
+cnvSE' = cnvSE'' []
+
+cnvSE'' :: [ann] -> ExpS id ann ->
+           State (Anns [ann], UniqueIdentifier) (AExpE id)
+cnvSE'' as = \case
+  AnnS a m -> cnvSE'' (a : as) m
+  rest     -> do
+    (tbl , i) <- get
+    let newId = i + 1
+    put ((newId , as) : tbl, newId)
+    AnnR newId <$> cnvSE''' rest
+
+cnvSE''' :: ExpS id ann -> State (Anns [ann], UniqueIdentifier) (ExpE id)
+cnvSE''' = \case
+  VarS x   -> VarR <$> pure x
+  AbsS x n -> AbsR <$> pure x   <*> cnvSE' n
+  AppS l m -> AppR <$> cnvSE' l <*> cnvSE' m
+  TplS ms  -> TplR <$> mapM cnvSE' ms
+  AnnS {}  -> error "Impossible!"
