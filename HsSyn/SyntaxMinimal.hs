@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Syntax where
+module SyntaxMinimal where
 
 data Exp id
   = Var      (Located id)
