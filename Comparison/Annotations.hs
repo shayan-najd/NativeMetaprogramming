@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -Wall         #-}
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms  #-}
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE GADTs            #-}
 module Annotations where
 
 import Control.Monad.State
@@ -162,17 +165,18 @@ cnvEA :: (Anns ann , AExpE id) -> AExpR id (Maybe ann)
 cnvEA (as , AnnR a  m) = AnnR (lookup a as) (fmap (flip lookup as) m)
 
 -- Recursion to External
-cnvAE :: AExpR id (Maybe ann) -> AExpE id
-cnvAE m = evalState (cnvAE' m) ([] , 0)
+cnvAE :: AExpR id ann -> (Anns ann , AExpE id)
+cnvAE m = let (m' , (tbl, _)) = runState (cnvAE' m) ([] , 0)
+          in  (tbl , m')
 
-cnvAE' :: AExpR id (Maybe ann) -> State (Anns ann, UniqueIdentifier) (AExpE id)
-cnvAE' (AnnR ma m) = do
+cnvAE' :: AExpR id ann -> State (Anns ann, UniqueIdentifier) (AExpE id)
+cnvAE' (AnnR a m) = do
   (tbl , i) <- get
   let newId = i + 1
-  put (maybe tbl (\ a -> (newId , a) : tbl) ma, newId)
+  put ((newId , a) : tbl, newId)
   AnnR newId <$> cnvAE'' m
 
-cnvAE'' :: ExpR id (Maybe ann) -> State (Anns ann, UniqueIdentifier) (ExpE id)
+cnvAE'' :: ExpR id ann -> State (Anns ann, UniqueIdentifier) (ExpE id)
 cnvAE'' = \case
   VarR x   -> pure (VarR x)
   AbsR x n -> AbsR <$> pure x   <*> cnvAE' n
@@ -254,3 +258,107 @@ cnvSE''' = \case
   AppS l m -> AppR <$> cnvSE' l <*> cnvSE' m
   TplS ms  -> TplR <$> mapM cnvSE' ms
   AnnS {}  -> error "Impossible!"
+
+--------------------------------------------------------------------------------
+-- Row Extensibility Using Annotations
+--------------------------------------------------------------------------------
+
+-- Annotated expressions,
+--   where annotations are baked into the definition
+--  (like HsSyn AST)
+----------------------------------------------------
+data Typ
+data SrcLoc
+
+data Exp id
+  = Var id
+  | Abs Typ SrcLoc id (Exp id)
+  | App Typ (Exp id)  (Exp id)
+  | Tpl [Typ] [Exp id]
+
+
+-- Annotated expressions
+--  where annotations are *not* baked into the definition
+--        (like HSE AST but with recursion annotation)
+---------------------------------------------------------
+data Ann = AVar
+         | AAbs  Typ SrcLoc
+         | AApp  Typ
+         | ATpl  [Typ]
+
+type ExpX id = AExpR id Ann
+pattern VarX :: id -> ExpX id
+pattern AbsX :: Typ -> SrcLoc -> id -> ExpX id -> ExpX id
+pattern AppX :: Typ -> ExpX id -> ExpX id -> ExpX id
+pattern TplX :: [Typ] -> [ExpX id] -> ExpX id
+
+pattern VarX      x   = AnnR AVar       (VarR x)
+pattern AbsX t  s x n = AnnR (AAbs t s) (AbsR x n)
+pattern AppX t    l m = AnnR (AApp t)   (AppR l m)
+pattern TplX ts   ms  = AnnR (ATpl ts)  (TplR ms)
+
+cnvExpXtoExp :: ExpX id -> Exp id
+cnvExpXtoExp = \case
+  VarX x       -> Var x
+  AbsX t s x n -> Abs t s x (cnvExpXtoExp n)
+  AppX t   l m -> App t (cnvExpXtoExp l) (cnvExpXtoExp m)
+  TplX ts  ms  -> Tpl ts (map cnvExpXtoExp ms)
+  _            -> error "Impossible!" -- <--- One problem with this approach
+
+cnvExptoExpX :: Exp id -> ExpX id
+cnvExptoExpX = \case
+  Var     x   -> VarX     x
+  Abs t s x n -> AbsX t s x (cnvExptoExpX n)
+  App t   l m -> AppX t (cnvExptoExpX l) (cnvExptoExpX m)
+  Tpl ts  ms  -> TplX ts (map cnvExptoExpX ms)
+
+-- Above but by using GADTs to make sure annotations are used properly
+----------------------------------------------------------------------
+
+-- constructor labels
+data Lbl
+  = VarL
+  | AbsL
+  | AppL
+  | TplL
+
+data ExpR' id ann where
+  VarR' :: id                             -> ExpR' id (ann 'VarL)
+  AbsR' :: id -> AExpR' id ann            -> ExpR' id (ann 'AbsL)
+  AppR' :: AExpR' id ann -> AExpR' id ann -> ExpR' id (ann 'AppL)
+  TplR' :: [AExpR' id ann]                -> ExpR' id (ann 'TplL)
+
+data AExpR' id  ann where
+  AnnR' :: ann l -> ExpR' id (ann l) -> AExpR' id ann
+
+data Ann' lbl where
+  AVar' :: Ann' 'VarL
+  AAbs' :: Typ -> SrcLoc -> Ann' 'AbsL
+  AApp' :: Typ -> Ann' 'AppL
+  ATpl' :: [Typ] -> Ann' 'TplL
+
+type ExpX' id = AExpR' id Ann'
+pattern VarX' :: id -> ExpX' id
+pattern AbsX' :: Typ -> SrcLoc -> id -> ExpX' id -> ExpX' id
+pattern AppX' :: Typ -> ExpX' id -> ExpX' id -> ExpX' id
+pattern TplX' :: [Typ] -> [ExpX' id] -> ExpX' id
+
+pattern VarX'      x   = AnnR' AVar'       (VarR' x)
+pattern AbsX' t  s x n = AnnR' (AAbs' t s) (AbsR' x n)
+pattern AppX' t    l m = AnnR' (AApp' t)   (AppR' l m)
+pattern TplX' ts   ms  = AnnR' (ATpl' ts)  (TplR' ms)
+
+cnvExpX'toExp :: ExpX' id -> Exp id
+cnvExpX'toExp = \case
+  VarX'     x   -> Var     x
+  AbsX' t s x n -> Abs t s x (cnvExpX'toExp n)
+  AppX' t   l m -> App t (cnvExpX'toExp l) (cnvExpX'toExp m)
+  TplX' ts  ms  -> Tpl ts (map cnvExpX'toExp ms)
+  _             -> error "Impossible!" -- possibly not needed with the new checker
+
+cnvExptoExpX' :: Exp id -> ExpX' id
+cnvExptoExpX' = \case
+  Var     x   -> VarX'     x
+  Abs t s x n -> AbsX' t s x (cnvExptoExpX' n)
+  App t   l m -> AppX' t (cnvExptoExpX' l) (cnvExptoExpX' m)
+  Tpl ts  ms  -> TplX' ts (map cnvExptoExpX' ms)
