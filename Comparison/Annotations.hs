@@ -259,6 +259,7 @@ cnvSE''' = \case
   TplS ms  -> TplR <$> mapM cnvSE' ms
   AnnS {}  -> error "Impossible!"
 
+{-
 --------------------------------------------------------------------------------
 -- Row Extensibility Using Annotations
 --------------------------------------------------------------------------------
@@ -362,3 +363,122 @@ cnvExptoExpX' = \case
   Abs t s x n -> AbsX' t s x (cnvExptoExpX' n)
   App t   l m -> AppX' t (cnvExptoExpX' l) (cnvExptoExpX' m)
   Tpl ts  ms  -> TplX' ts (map cnvExptoExpX' ms)
+
+-- Row Extensibility with Product Annotations
+----------------------------------------------------------------------
+
+-- constructor labels
+data Lbl
+  = VarL
+  | AbsL
+  | AppL
+  | TplL
+
+data ExpA id ann
+  = VarA (ann 'VarL) id
+  | AbsA (ann 'AbsL) id (ExpA id ann)
+  | AppA (ann 'AppL) (ExpA id ann) (ExpA id ann)
+  | TplA (ann 'TplL) [ExpA id ann]
+
+data Ann lbl where
+  AVar :: Ann 'VarL
+  AAbs :: Typ   -> SrcLoc -> Ann 'AbsL
+  AApp :: Typ   -> Ann 'AppL
+  ATpl :: [Typ] -> Ann 'TplL
+
+type ExpX id = ExpA id Ann
+pattern VarX :: id -> ExpX id
+pattern AbsX :: Typ -> SrcLoc -> id -> ExpX id -> ExpX id
+pattern AppX :: Typ -> ExpX id -> ExpX id -> ExpX id
+pattern TplX :: [Typ] -> [ExpX id] -> ExpX id
+
+pattern VarX      x   = VarA AVar       x
+pattern AbsX t  s x n = AbsA (AAbs t s) x n
+pattern AppX t    l m = AppA (AApp t)   l m
+pattern TplX ts   ms  = TplA (ATpl ts)  ms
+
+cnvExpXtoExp :: ExpX id -> Exp id
+cnvExpXtoExp = \case
+  VarX     x   -> Var     x
+  AbsX t s x n -> Abs t s x (cnvExpXtoExp n)
+  AppX t   l m -> App t (cnvExpXtoExp l) (cnvExpXtoExp m)
+  TplX ts  ms  -> Tpl ts (map cnvExpXtoExp ms)
+
+cnvExptoExpX :: Exp id -> ExpX id
+cnvExptoExpX = \case
+  Var     x   -> VarX     x
+  Abs t s x n -> AbsX t s x (cnvExptoExpX n)
+  App t   l m -> AppX t (cnvExptoExpX l) (cnvExptoExpX m)
+  Tpl ts  ms  -> TplX ts (map cnvExptoExpX ms)
+-}
+
+-- Row and Column Extensibility with Product Annotations
+----------------------------------------------------------------------
+
+-- Annotated expressions,
+--   where annotations are baked into the definition
+--         and new constructors are added
+--  (like HsSyn AST)
+----------------------------------------------------
+data Typ
+data SrcLoc
+
+data Exp id
+  = Var id
+  | Abs Typ SrcLoc id (Exp id)
+  | App Typ (Exp id)  (Exp id)
+  | Tpl [Typ] [Exp id]
+  | Out Typ (Exp id)
+
+-- constructor labels
+data Lbl
+  = VarL
+  | AbsL
+  | AppL
+  | TplL
+
+data ExpA id fun ann
+  = VarA (ann 'VarL) id
+  | AbsA (ann 'AbsL) id (ExpA id fun ann)
+  | AppA (ann 'AppL) (ExpA id fun ann) (ExpA id fun ann)
+  | TplA (ann 'TplL) [ExpA id fun ann]
+  | ExtA (fun (ExpA id fun ann)) -- tying the knot
+
+data Ann lbl where
+  AVar :: Ann 'VarL
+  AAbs :: Typ   -> SrcLoc -> Ann 'AbsL
+  AApp :: Typ   -> Ann 'AppL
+  ATpl :: [Typ] -> Ann 'TplL
+
+-- functor
+data Fun exp
+  = OutF Typ exp
+
+type ExpX id = ExpA id Fun Ann
+pattern VarX :: id -> ExpX id
+pattern AbsX :: Typ -> SrcLoc -> id -> ExpX id -> ExpX id
+pattern AppX :: Typ -> ExpX id -> ExpX id -> ExpX id
+pattern TplX :: [Typ] -> [ExpX id] -> ExpX id
+pattern OutX :: Typ -> ExpX id -> ExpX id
+
+pattern VarX      x   = VarA AVar       x
+pattern AbsX t  s x n = AbsA (AAbs t s) x n
+pattern AppX t    l m = AppA (AApp t)   l m
+pattern TplX ts   ms  = TplA (ATpl ts)  ms
+pattern OutX t    m   = ExtA (OutF t m)
+
+cnvExpXtoExp :: ExpX id -> Exp id
+cnvExpXtoExp = \case
+  VarX     x   -> Var     x
+  AbsX t s x n -> Abs t s x (cnvExpXtoExp n)
+  AppX t   l m -> App t (cnvExpXtoExp l) (cnvExpXtoExp m)
+  TplX ts  ms  -> Tpl ts (map cnvExpXtoExp ms)
+  OutX t   m   -> Out t (cnvExpXtoExp m)
+
+cnvExptoExpX :: Exp id -> ExpX id
+cnvExptoExpX = \case
+  Var     x   -> VarX     x
+  Abs t s x n -> AbsX t s x (cnvExptoExpX n)
+  App t   l m -> AppX t (cnvExptoExpX l) (cnvExptoExpX m)
+  Tpl ts  ms  -> TplX ts (map cnvExptoExpX ms)
+  Out t   m   -> OutX t (cnvExptoExpX m)
