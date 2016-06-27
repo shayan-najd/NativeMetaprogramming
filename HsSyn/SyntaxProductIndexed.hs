@@ -1,40 +1,42 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module SyntaxProductIndexed where
 
-data Exp id
+data Exp row col id
   = Var      (Located id)
   | UnboundVar UnboundVar
 --  HSE.Con (missing?)
 
   | Lit      Lit
-  | OverLit  (OverLit id)
+  | OverLit  (OverLit row col id)
 
-  | App      (LExp id) (LExp id)
+  | App      (Exp row col id) (Exp row col id)
 
-  | SectionL (LExp id) (LExp id)
+  | SectionL (Exp row col id) (Exp row col id)
 
-  | SectionR (LExp id) (LExp id)
+  | SectionR (Exp row col id) (Exp row col id)
 
-  | NegApp   (LExp id) (SyntaxExp id)
+  | NegApp   (Exp row col id) (SyntaxExp row col id)
 
-  | OpApp    (LExp id) (LExp id) (PostRn id Fixity) (LExp id)
+  | OpApp    (Exp row col id) (Exp row col id) (PostRn id Fixity)
+             (Exp row col id)
 
-  | AppType    (LExp id) (LWcType id)
-  | AppTypeOut (LExp id) (LWcType Name)
+  | AppType    (Exp row col id) (LWcType row col id)
+  | AppTypeOut (Exp row col id) (LWcType row col Name)
 
-  | Par      (LExp id)
+  | Par      (Exp row col id)
 
-  | If       (Maybe (SyntaxExp id)) (LExp id) (LExp id) (LExp id)
+  | If       (Maybe (SyntaxExp row col id))
+             (Exp row col id) (Exp row col id) (Exp row col id)
 
-  | MultiIf  (PostTc id TCRType) [LGRHS id (LExp id)]
+  | MultiIf  (PostTc id TCRType) [LGRHS row col id (Exp row col id)]
 
-  | Case     (LExp id) (MatchGroup id (LExp id))
+  | Case     (Exp row col id) (MatchGroup row col id (Exp row col id))
 
-  | Lam      (MatchGroup id (LExp id))
+  | Lam      (MatchGroup row col id (Exp row col id))
 
-  | LamCase  (MatchGroup id (LExp id))
+  | LamCase  (MatchGroup row col id (Exp row col id))
 
-  | Let      (LLocalBinds id) (LExp  id)
+  | Let      (LLocalBinds row col id) (Exp row col id)
 
   | IPVar    IPName
 
@@ -42,31 +44,35 @@ data Exp id
 
   | OverLabel FastString
 
-  | RecordCon (Located id) (PostTc id ConLike) PostTcExp (RecordBinds id)
+  | RecordCon (Located id) (PostTc id ConLike) (PostTcExp row col)
+              (RecordBinds row col id)
 
-  | RecordUpd (LExp id) [LRecUpdField id] (PostTc id [ConLike])
+  | RecordUpd (Exp row col id) [LRecUpdField row col id] (PostTc id [ConLike])
               (PostTc id [TCRType]) (PostTc id [TCRType]) (PostTc id Wrapper)
 
-  | ExplicitTuple [LTupArg id] Boxity
+  | ExplicitTuple [LTupArg row col id] Boxity
 --  HSE.TupleSection (part of above?)
 
-  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp id)) [LExp id]
+  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp row col id))
+                 [Exp row col id]
 
-  | ExplicitPArr (PostTc id TCRType) [LExp id]
+  | ExplicitPArr (PostTc id TCRType) [Exp row col id]
 
-  | ArithSeq  PostTcExp (Maybe (SyntaxExp id)) (ArithSeqInfo id)
+  | ArithSeq  (PostTcExp row col) (Maybe (SyntaxExp row col id))
+              (ArithSeqInfo row col id)
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
 
-  | PArrSeq   PostTcExp (ArithSeqInfo id) -- expanding ArithSeqInfo below
+  | PArrSeq   (PostTcExp row col)
+              (ArithSeqInfo row col id) -- expanding ArithSeqInfo below
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
 
-  | Do           (StmtContext Name) (LExpLStmts id) (PostTc id TCRType)
+  | Do           (StmtContext Name) (LExpLStmts row col id) (PostTc id TCRType)
 --  StmtContext.ListComp
 --  StmtContext.MonadComp
 --  StmtContext.ParArrComp
@@ -78,89 +84,93 @@ data Exp id
 --  StmtContext.ParStmtCtxt
 --  StmtContext.TransStmtCtxt
 
-  | Bracket      (Bracket id)
-  | RnBracketOut (Bracket Name) [PendingRnSplice]
-  | TcBracketOut (Bracket Name) [PendingTcSplice]
+  | Bracket      (Bracket row col id)
+  | RnBracketOut (Bracket row col Name) [PendingRnSplice row col]
+  | TcBracketOut (Bracket row col Name) [PendingTcSplice row col]
 --  HSE.QuasiQuote (missing?)
 
 --  HSE.VarQuote (missing?)
 --  HSE.TypQuote (missing?)
 
-  | SpliceE  (Splice id)
+  | SpliceE  (Splice row col id)
 
-  | ExpWithTySig (LExp id) (LSigWcType id)
-  | ExpWithTySigOut (LExp id) (LSigWcType Name)
+  | ExpWithTySig (Exp row col id) (LSigWcType row col id)
+  | ExpWithTySigOut (Exp row col id) (LSigWcType row col Name)
 
-  | CoreAnn   SourceText StringLiteral (LExp id)
-  | SCC       SourceText StringLiteral (LExp id)
+  | CoreAnn   SourceText StringLiteral (Exp row col id)
+  | SCC       SourceText StringLiteral (Exp row col id)
   | TickPragma SourceText (StringLiteral,(Int,Int),(Int,Int))
                ((SourceText,SourceText),(SourceText,SourceText))
-               (LExp id) -- (is it GenPragma?)
+               (Exp row col id) -- (is it GenPragma?)
 
-  | Proc      (LPat id) (LCmdTop id)
+  | Proc      (LPat row col id) (LCmdTop row col id)
 
-  | ArrApp    (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
+  | ArrApp    (Exp row col id) (Exp row col id) (PostTc id TCRType)
+              ArrAppType Bool
 --  HSE.LeftArrHighApp (don't know how they compare)
-  | ArrForm   (LExp id) (Maybe Fixity) [LCmdTop id]
+  | ArrForm   (Exp row col id) (Maybe Fixity) [LCmdTop row col id]
 --  HSE.RightArrHighApp (don't know how they compare)
 
   | EWildPat -- (right comparison?)
 
-  | Static    (LExp id)
+  | Static    (Exp row col id)
 
-  | Tick      (Tickish id) (LExp id)
+  | Tick      (Tickish id) (Exp row col id)
 
-  | BinTick   Int Int (LExp id)
+  | BinTick   Int Int (Exp row col id)
 
-  | EAsPat    (Located id) (LExp id)
+  | EAsPat    (Located id) (Exp row col id)
 
-  | EViewPat  (LExp id) (LExp id)
+  | EViewPat  (Exp row col id) (Exp row col id)
 
-  | ELazyPat  (LExp id)
+  | ELazyPat  (Exp row col id)
 
-  | Wrap      Wrapper (Exp id)
+  | Wrap      Wrapper (Exp row col id)
 
-data Pat id
+data Pat row col id
   = WildPat   (PostTc id TCRType)
 
   | VarPat    (Located id)
 
   | LitPat    Lit
-  | NPat      (LOverLit id)
-              (Maybe (SyntaxExp id))  (SyntaxExp id) (PostTc id TCRType)
+  | NPat      (LOverLit row col id)
+              (Maybe (SyntaxExp row col id))
+              (SyntaxExp row col id) (PostTc id TCRType)
 
-  | NPlusKPat (Located id) (LOverLit id) (OverLit id) (SyntaxExp id)
-              (SyntaxExp id) (PostTc id TCRType)
+  | NPlusKPat (Located id) (LOverLit row col id)
+              (OverLit row col id) (SyntaxExp row col id)
+              (SyntaxExp row col id) (PostTc id TCRType)
 
-  | TuplePat  [LPat id] Boxity [PostTc id TCRType]
+  | TuplePat  [LPat row col id] Boxity [PostTc id TCRType]
 
-  | ListPat   [LPat id] (PostTc id TCRType)
-              (Maybe (PostTc id TCRType, SyntaxExp id))
+  | ListPat   [LPat row col id] (PostTc id TCRType)
+              (Maybe (PostTc id TCRType, SyntaxExp row col id))
 
-  | ParPat    (LPat id)
+  | ParPat    (LPat row col id)
 
-  | AsPat     (Located id) (LPat id)
+  | AsPat     (Located id) (LPat row col id)
 
-  | ViewPat   (LExp id) (LPat id) (PostTc id TCRType)
+  | ViewPat   (Exp row col id) (LPat row col id) (PostTc id TCRType)
 
-  | BangPat   (LPat id)
+  | BangPat   (LPat row col id)
 
-  | LazyPat   (LPat id)
+  | LazyPat   (LPat row col id)
 
-  | SigPatIn  (LPat id) (LSigWcType id)
-  | SigPatOut (LPat id) TCRType
+  | SigPatIn  (LPat row col id) (LSigWcType row col id)
+  | SigPatOut (LPat row col id) TCRType
 
-  | PArrPat   [LPat id] (PostTc id TCRType)
+  | PArrPat   [LPat row col id] (PostTc id TCRType)
 
-  | ConPatIn  (Located id) (ConPatDetails id)
-  | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds (ConPatDetails id)
+  | ConPatIn  (Located id) (ConPatDetails row col id)
+  | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds
+              (ConPatDetails row col id)
               Wrapper
 --  PRec
 --  PInfixApp
 
-  | SplicePat (Splice id)
+  | SplicePat (Splice row col id)
 
-  | CoPat     Wrapper (Pat id) TCRType
+  | CoPat     Wrapper (Pat row col id) TCRType
 
 data Lit
   = Char          SourceText Char
@@ -189,28 +199,28 @@ data Lit
 
   | DoublePrim    FractionalLit
 
-data Decl id
+data Decl row col id
   = RoleAnnotD (RoleAnnotDecl id)
 
-  | AnnD (AnnDecl id)
+  | AnnD (AnnDecl row col id)
 
-  | DerivD (DerivDecl id)
+  | DerivD (DerivDecl row col id)
 
   | WarningD (WarnDecls id)
 
-  | RuleD (RuleDecls id)
+  | RuleD (RuleDecls row col id)
 
-  | DefD (DefaultDecl id)
+  | DefD (DefaultDecl row col id)
 
-  | ForD (ForeignDecl id)
+  | ForD (ForeignDecl row col id)
 --   \n
 --  ForExp (in ForeignDecl)
 
-  | SpliceD (SpliceDecl id)
+  | SpliceD (SpliceDecl row col id)
 
   | DocD (DocDecl)
 
-  | SigD (Sig id)
+  | SigD (Sig row col id)
 --  Sig.TypeSig
 --  Sig.PatSynSig
 --    \n
@@ -224,7 +234,7 @@ data Decl id
 --  HSe.InlineConlikeSig (what does it correspond to?)
 --  HSe.SpecInlineSig    (what does it correspond to?)
 
-  | TyClD (TyClDecl id) -- expanding TyClDecl below
+  | TyClD (TyClDecl row col id) -- expanding TyClDecl below
 --  TyClDecl.FamilyDecl.DataFamily
 --  TyClDecl.FamilyDecl.OpenTypeFamily
 --  TyClDecl.FamilyDecl.ClosedTypeFamily
@@ -236,7 +246,7 @@ data Decl id
 --  TyClDecl.ClassDecl
 --             \n
 
-  | InstD (InstDecl id) -- expanding InstDecl below
+  | InstD (InstDecl row col id) -- expanding InstDecl below
 --  InstDecl.ClsInstD
 --  InstDecl.DataFamInstD
 --             \n
@@ -244,7 +254,7 @@ data Decl id
 --             \n
 --  InstDecl.TyFamInstD
 
-  | ValD (Bind id)
+  | ValD (Bind row col id)
 --  Bind.FunBind
 --  Bind.PatBind
 --  Bind.VarBind
@@ -254,56 +264,56 @@ data Decl id
 
 --  HSE.DeprPragmaDecl  (missing?)
 
-  | VectD (VectDecl id)
+  | VectD (VectDecl row col id)
 
-data Type id
-  = ForAllTy [LTyVarBndr id] (LType id)
+data Type row col id
+  = ForAllTy [LTyVarBndr row col id] (LType row col id)
 
-  | FunTy (LType id) (LType id)
+  | FunTy (LType row col id) (LType row col id)
 
-  | TupleTy TupleSort [LType id]
+  | TupleTy TupleSort [LType row col id]
 
-  | ListTy (LType id)
+  | ListTy (LType row col id)
 
-  | PArrTy (LType id)
+  | PArrTy (LType row col id)
 
-  | AppTy (LType id) (LType id)
+  | AppTy (LType row col id) (LType row col id)
 
   | TyVar (Located id)
 
  -- HSE.TyCon (part of above)
 
-  | ParTy (LType id)
+  | ParTy (LType row col id)
 
-  | KindSig (LType id) (LKind id)
+  | KindSig (LType row col id) (LKind row col id)
 
-  | BangTy SrcBang (LType id)
+  | BangTy SrcBang (LType row col id)
 
   | WildCardTy (WildCardInfo id)
 
-  | EqTy (LType id) (LType id)
+  | EqTy (LType row col id) (LType row col id)
 
-  | SpliceTy (Splice id) (PostTc id TCRKind)
+  | SpliceTy (Splice row col id) (PostTc id TCRKind)
 
-  | OpTy (LType id) (Located id) (LType id) -- match?
+  | OpTy (LType row col id) (Located id) (LType row col id) -- match?
 
   | TyLit TyLit
 --  TyLit.Num
 --  TyLit.String
-  | AppsTy [LAppType id] -- assuming it is promoted constructors
-  | ExplicitListTy (PostTc id TCRKind) [LType id]
-  | ExplicitTupleTy [PostTc id TCRKind] [LType id]
+  | AppsTy [LAppType row col id] -- assuming it is promoted constructors
+  | ExplicitListTy (PostTc id TCRKind) [LType row col id]
+  | ExplicitTupleTy [PostTc id TCRKind] [LType row col id]
 --  HSE.Promoted.PromotedUnit (ExplicitTupleTy [] []?)
 
 --  HSE.TyQuasiQuote (missing?)
 
-  | QualTy (LContext id) (LType id)
+  | QualTy (LContext row col id) (LType row col id)
 
-  | IParamTy IPName (LType id)
+  | IParamTy IPName (LType row col id)
 
-  | DocTy (LType id) LDocString
+  | DocTy (LType row col id) LDocString
 
-  | RecTy [LConDeclField id]
+  | RecTy [LConDeclField row col id]
 
   | CoreTy TCRType
 
@@ -313,84 +323,83 @@ data Type id
 ----------------------------------------------------------------------------
 -- Located versions
 
-type LExp id               = Located (Exp id)
-type LTupArg id            = Located (TupArg id)
-type LCmd id               = Located (Cmd id)
-type LCmdTop id            = Located (CmdTop id)
-type LMatch id body        = Located (Match id body)
-type LDecl id              = Located (Decl id)
-type LBangType id        = Located (BangType id)
-type LContext id         = Located (Context id)
-type LType id            = Located (Type id)
-type LKind id            = Located (Kind id)
-type LConDeclField id    = Located (ConDeclField id)
-type LTyVarBndr id       = Located (TyVarBndr id)
-type LAppType id         = Located (AppType id)
-type LFieldOcc id        = Located (FieldOcc id)
-type LGRHS id body         = Located (GRHS id body)
-type LStmt id body         = Located (StmtLR id id body)
-type LStmtLR idL idR body  = Located (StmtLR idL idR body)
-type LPat id               = Located (Pat id)
-type LRecField' id arg     = Located (RecField' id arg)
-type LRecField id arg      = Located (RecField id arg)
-type LRecUpdField id       = Located (RecUpdField id)
-type LDocString            = Located DocString
-type LImportDecl      id = Located (ImportDecl id)
-type LIE id              = Located (IE id)
-type LBindLR       idL idR = Located (BindLR idL idR)
-type LIPBind            id = Located (IPBind id)
-type LSig             id = Located (Sig id)
-type LFixitySig       id = Located (FixitySig id)
-type LTcSpecPrag           = Located TcSpecPrag
-type LSpliceDecl      id = Located (SpliceDecl id)
-type LTyClDecl        id = Located (TyClDecl id)
-type LFamilyResultSig id = Located (FamilyResultSig id)
-type LFamilyDecl      id = Located (FamilyDecl id)
-type LInjectivityAnn  id = Located (InjectivityAnn id)
-type LConDecl         id = Located (ConDecl id)
-type LTyFamInstEqn    id = Located (TyFamInstEqn id)
-type LTyFamDefltEqn   id = Located (TyFamDefltEqn id)
-type LTyFamInstDecl   id = Located (TyFamInstDecl id)
-type LDataFamInstDecl id = Located (DataFamInstDecl id)
-type LClsInstDecl     id = Located (ClsInstDecl id)
-type LInstDecl        id = Located (InstDecl id)
-type LDerivDecl       id = Located (DerivDecl id)
-type LDefaultDecl     id = Located (DefaultDecl id)
-type LForeignDecl     id = Located (ForeignDecl id)
-type LRuleDecls       id = Located (RuleDecls id)
-type LRuleDecl        id = Located (RuleDecl id)
-type LRuleBndr        id = Located (RuleBndr id)
-type LVectDecl        id = Located (VectDecl id)
-type LDocDecl              = Located (DocDecl)
-type LWarnDecls       id = Located (WarnDecls id)
-type LWarnDecl        id = Located (WarnDecl id)
-type LAnnDecl         id = Located (AnnDecl id)
-type LRoleAnnotDecl   id = Located (RoleAnnotDecl id)
-type LModuleName           = Located ModuleName
-type LIPName               = Located IPName
-type LSplice id            = Located (Splice id)
-type LCType                = Located CType
-type LOverlapMode          = Located OverlapMode
-type LCCallConv            = Located CCallConv
-type LSafety               = Located Safety
-type LSourceText           = Located SourceText
-type LCExportSpec          = Located CExportSpec
-type LOverLit id           = Located (OverLit id)
-type LConLike              = Located ConLike
-type LExpLStmts id         = Located [ExpLStmt id]
-type LCmdLStmts id         = Located [CmdLStmt id]
-type LLMatchs id body      = Located [LMatch id body]
-type LLIEs id            = Located [LIE id]
-type LFieldLbl id        = Located (FieldLbl id)
-type LLSigTypes id       = Located [LSigType id]
-type LLConDeclFields id  = Located [LConDeclField id]
-type LRdrName              = Located RdrName
-type LName                 = Located Name
-type LFunDepL id         = Located (FunDep (Located id))
-type LSrcTextRuleName      = Located (SourceText, RuleName)
-type LMRole                = Located (Maybe Role)
-type LLocalBinds id        = Located (LocalBinds id)
-type LLocalBindsLR idL idR = Located (LocalBindsLR idL idR)
+type LTupArg            row col id = Located (TupArg row col id)
+type LCmd               row col id = Located (Cmd  row col id)
+type LCmdTop            row col id = Located (CmdTop  row col id)
+type LMatch        row col id body = Located (Match  row col id body)
+type LDecl              row col id = Located (Decl  row col id)
+type LBangType          row col id = Located (BangType  row col id)
+type LContext           row col id = Located (Context row col id)
+type LType              row col id = Located (Type  row col id)
+type LKind              row col id = Located (Kind  row col id)
+type LConDeclField      row col id = Located (ConDeclField row col id)
+type LTyVarBndr         row col id = Located (TyVarBndr row col id)
+type LAppType           row col id = Located (AppType row col id)
+type LFieldOcc                  id = Located (FieldOcc id)
+type LGRHS         row col id body = Located (GRHS  row col id body)
+type LStmt         row col id body = Located (StmtLR  row col id id body)
+type LStmtLR  row col idL idR body = Located (StmtLR  row col idL idR body)
+type LPat               row col id = Located (Pat  row col id)
+type LRecField'             id arg = Located (RecField' id arg)
+type LRecField              id arg = Located (RecField id arg)
+type LRecUpdField       row col id = Located (RecUpdField row col id)
+type LDocString                    = Located DocString
+type LImportDecl                id = Located (ImportDecl id)
+type LIE                        id = Located (IE id)
+type LBindLR       row col idL idR = Located (BindLR row col idL idR)
+type LIPBind            row col id = Located (IPBind row col id)
+type LSig               row col id = Located (Sig row col id)
+type LFixitySig                 id = Located (FixitySig id)
+type LTcSpecPrag                   = Located TcSpecPrag
+type LSpliceDecl        row col id = Located (SpliceDecl row col id)
+type LTyClDecl          row col id = Located (TyClDecl row col id)
+type LFamilyResultSig   row col id = Located (FamilyResultSig row col id)
+type LFamilyDecl        row col id = Located (FamilyDecl row col id)
+type LInjectivityAnn            id = Located (InjectivityAnn id)
+type LConDecl           row col id = Located (ConDecl row col id)
+type LTyFamInstEqn      row col id = Located (TyFamInstEqn row col id)
+type LTyFamDefltEqn     row col id = Located (TyFamDefltEqn row col id)
+type LTyFamInstDecl     row col id = Located (TyFamInstDecl row col id)
+type LDataFamInstDecl   row col id = Located (DataFamInstDecl row col id)
+type LClsInstDecl       row col id = Located (ClsInstDecl row col id)
+type LInstDecl          row col id = Located (InstDecl row col id)
+type LDerivDecl         row col id = Located (DerivDecl row col id)
+type LDefaultDecl       row col id = Located (DefaultDecl row col id)
+type LForeignDecl       row col id = Located (ForeignDecl row col id)
+type LRuleDecls         row col id = Located (RuleDecls row col id)
+type LRuleDecl          row col id = Located (RuleDecl row col id)
+type LRuleBndr          row col id = Located (RuleBndr row col id)
+type LVectDecl          row col id = Located (VectDecl row col id)
+type LDocDecl                      = Located (DocDecl)
+type LWarnDecls                 id = Located (WarnDecls id)
+type LWarnDecl                  id = Located (WarnDecl id)
+type LAnnDecl           row col id = Located (AnnDecl row col id)
+type LRoleAnnotDecl             id = Located (RoleAnnotDecl id)
+type LModuleName                   = Located ModuleName
+type LIPName                       = Located IPName
+type LSplice            row col id = Located (Splice row col id)
+type LCType                        = Located CType
+type LOverlapMode                  = Located OverlapMode
+type LCCallConv                    = Located CCallConv
+type LSafety                       = Located Safety
+type LSourceText                   = Located SourceText
+type LCExportSpec                  = Located CExportSpec
+type LOverLit           row col id = Located (OverLit  row col id)
+type LConLike                      = Located ConLike
+type LExpLStmts         row col id = Located [ExpLStmt row col id]
+type LCmdLStmts         row col id = Located [CmdLStmt row col id]
+type LLMatchs      row col id body = Located [LMatch row col id body]
+type LLIEs                      id = Located [LIE id]
+type LFieldLbl                  id = Located (FieldLbl id)
+type LLSigTypes         row col id = Located [LSigType row col id]
+type LLConDeclFields    row col id = Located [LConDeclField row col id]
+type LRdrName                      = Located RdrName
+type LName                         = Located Name
+type LFunDepL                   id = Located (FunDep (Located id))
+type LSrcTextRuleName              = Located (SourceText, RuleName)
+type LMRole                        = Located (Maybe Role)
+type LLocalBinds   row col id      = Located (LocalBinds row col id)
+type LLocalBindsLR row col idL idR = Located (LocalBindsLR row col idL idR)
 
 --------------------------------------------------------
 
@@ -446,119 +455,127 @@ data WarningTxt
 data SrcBang
 data RdrName
 
-data OverLit id
-  = OverLit' OverLitVal (PostRn id Bool) (Exp id) (PostTc id TCRType)
+data OverLit row col id
+  = OverLit' OverLitVal (PostRn id Bool) (Exp row col id) (PostTc id TCRType)
 
 data OverLitVal
   = Integral   !SourceText !Integer
   | Fractional !FractionalLit
   | IsString   !SourceText !FastString
 
-type PostTcExp   = Exp Id
+type PostTcExp row col
+  = Exp row col Id
 
-type PostTcTable = [(Name, PostTcExp)]
+type PostTcTable row col
+  = [(Name, PostTcExp row col)]
 
-data SyntaxExp id
-  = SyntaxExp (Exp id) [Wrapper] Wrapper
+data SyntaxExp row col id
+  = SyntaxExp (Exp row col id) [Wrapper] Wrapper
 
-type CmdSyntaxTable id = [(Name, Exp id)]
+type CmdSyntaxTable  row col id = [(Name, Exp row col id)]
 
 data UnboundVar
   = OutOfScope OccName GlobalRdrEnv
   | TrueExpHole OccName
 
-data TupArg id
-  = Present (LExp id)
+data TupArg row col id
+  = Present (Exp row col id)
   | Missing (PostTc id TCRType)
 
-data LWcTypeX
-  = forall id. OutputableBndr id => LWcTypeX (LWcType id)
+data LWcTypeX row col
+  = forall id. OutputableBndr id => LWcTypeX (LWcType row col id)
 
-data Cmd id
-  = CmdArrApp  (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
-  | CmdArrForm (LExp id) (Maybe Fixity) [LCmdTop id]
-  | CmdApp     (LCmd id)  (LExp id)
-  | CmdLam     (MatchGroup id (LCmd id))
-  | CmdPar     (LCmd id)
-  | CmdCase    (LExp id) (MatchGroup id (LCmd id))
-  | CmdIf      (Maybe (SyntaxExp id)) (LExp id) (LCmd id) (LCmd id)
-  | CmdLet     (LLocalBinds id) (LCmd  id)
-  | CmdDo      (LCmdLStmts id) (PostTc id TCRType)
-  | CmdWrap    Wrapper (Cmd id)
+data Cmd row col id
+  = CmdArrApp  (Exp row col id) (Exp row col id) (PostTc id TCRType)
+               ArrAppType Bool
+  | CmdArrForm (Exp row col id) (Maybe Fixity) [LCmdTop row col id]
+  | CmdApp     (LCmd row col id)  (Exp row col id)
+  | CmdLam     (MatchGroup row col id (LCmd row col id))
+  | CmdPar     (LCmd row col id)
+  | CmdCase    (Exp row col id) (MatchGroup row col id (LCmd row col id))
+  | CmdIf      (Maybe (SyntaxExp row col id))
+               (Exp row col id) (LCmd row col id) (LCmd row col id)
+  | CmdLet     (LLocalBinds row col id) (LCmd row col id)
+  | CmdDo      (LCmdLStmts row col id) (PostTc id TCRType)
+  | CmdWrap    Wrapper (Cmd row col id)
 
 data ArrAppType
   = HigherOrderApp
   | FirstOrderApp
 
-data CmdTop id
-  = CmdTop (LCmd id) (PostTc id TCRType) (PostTc id TCRType)
-           (CmdSyntaxTable id)
+data CmdTop row col id
+  = CmdTop (LCmd row col id) (PostTc id TCRType) (PostTc id TCRType)
+           (CmdSyntaxTable row col id)
 
-type RecordBinds id = RecFields id (LExp id)
+type RecordBinds row col id = RecFields id (Exp row col id)
 
-data MatchGroup id body
-  = MG (LLMatchs id body) [PostTc id TCRType] (PostTc id TCRType) Origin
+data MatchGroup row col id body
+  = MG (LLMatchs row col id body) [PostTc id TCRType] (PostTc id TCRType) Origin
 
-data Match id body
-  = Match (MatchFixity id) [LPat id] (Maybe (LType id)) (GRHSs id body)
+data Match row col id body
+  = Match (MatchFixity id) [LPat row col id] (Maybe (LType row col id))
+          (GRHSs row col id body)
 
 data MatchFixity id
   = NonFunBindMatch
   | FunBindMatch (Located id) Bool
 
-data GRHSs id body
-  = GRHSs [LGRHS id body] (LLocalBinds id)
+data GRHSs row col id body
+  = GRHSs [LGRHS row col id body] (LLocalBinds row col id)
 
-data GRHS id body
-  = GRHS [GuardLStmt id] body
+data GRHS  row col id body
+  = GRHS [GuardLStmt row col id] body
 
-type Stmt id body  = StmtLR id id body
-type CmdLStmt   id = LStmt id (LCmd  id)
-type CmdStmt    id = Stmt  id (LCmd  id)
-type ExpLStmt   id = LStmt id (LExp id)
-type ExpStmt    id = Stmt  id (LExp id)
-type GuardLStmt id = LStmt id (LExp id)
-type GuardStmt  id = Stmt  id (LExp id)
-type GhciLStmt  id = LStmt id (LExp id)
-type GhciStmt   id = Stmt  id (LExp id)
+type Stmt row col id body  = StmtLR row col id id body
+type CmdLStmt   row col id = LStmt row col id (LCmd row col id)
+type CmdStmt    row col id = Stmt  row col id (LCmd row col id)
+type ExpLStmt   row col id = LStmt row col id (Exp row col id)
+type ExpStmt    row col id = Stmt  row col id (Exp row col id)
+type GuardLStmt row col id = LStmt row col id (Exp row col id)
+type GuardStmt  row col id = Stmt  row col id (Exp row col id)
+type GhciLStmt  row col id = LStmt row col id (Exp row col id)
+type GhciStmt   row col id = Stmt  row col id (Exp row col id)
 
-data StmtLR idL idR body
-  = LastStmt body Bool (SyntaxExp idR)
-  | BindStmt (LPat idL) body (SyntaxExp idR) (SyntaxExp idR)
+data StmtLR row col idL idR body
+  = LastStmt body Bool (SyntaxExp row col idR)
+  | BindStmt (LPat row col idL) body (SyntaxExp row col idR)
+             (SyntaxExp row col idR)
              (PostTc idR TCRType)
-  | ApplicativeStmt [(SyntaxExp idR, ApplicativeArg idL idR)]
-                    (Maybe (SyntaxExp idR)) (PostTc idR TCRType)
-  | BodyStmt body (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType)
-  | LetStmt  (LLocalBindsLR idL idR)
-  | ParStmt  [ParStmtBlock idL idR] (Exp idR) (SyntaxExp idR)
-             (PostTc idR TCRType)
-  | TransStmt TransForm [ExpLStmt idL] [(idR, idR)] (LExp idR)
-              (Maybe (LExp idR))
-              (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType) (Exp idR)
-  | RecStmt [LStmtLR idL idR body] [idR] [idR] (SyntaxExp idR)
-            (SyntaxExp idR) (SyntaxExp idR) (PostTc idR TCRType)
-            [PostTcExp] [PostTcExp] (PostTc idR TCRType)
+  | ApplicativeStmt [(SyntaxExp row col idR, ApplicativeArg row col idL idR)]
+                    (Maybe (SyntaxExp row col idR)) (PostTc idR TCRType)
+  | BodyStmt body (SyntaxExp row col idR) (SyntaxExp row col idR)
+                  (PostTc idR TCRType)
+  | LetStmt  (LLocalBindsLR row col idL idR)
+  | ParStmt  [ParStmtBlock row col idL idR] (Exp row col idR)
+             (SyntaxExp row col idR) (PostTc idR TCRType)
+  | TransStmt TransForm [ExpLStmt row col idL] [(idR, idR)] (Exp row col idR)
+              (Maybe (Exp row col idR))
+              (SyntaxExp row col idR) (SyntaxExp row col idR)
+              (PostTc idR TCRType) (Exp row col idR)
+  | RecStmt [LStmtLR row col idL idR body] [idR] [idR] (SyntaxExp row col idR)
+            (SyntaxExp row col idR) (SyntaxExp row col idR) (PostTc idR TCRType)
+            [PostTcExp row col] [PostTcExp row col] (PostTc idR TCRType)
 
 data TransForm
   = ThenForm
   | GroupForm
 
-data ParStmtBlock idL idR
-  = ParStmtBlock [ExpLStmt idL] [idR] (SyntaxExp idR)
+data ParStmtBlock row col idL idR
+  = ParStmtBlock [ExpLStmt row col idL] [idR] (SyntaxExp row col idR)
 
-data ApplicativeArg idL idR
-  = ApplicativeArgOne (LPat idL) (LExp idL)
-  | ApplicativeArgMany [ExpLStmt idL] (Exp idL) (LPat idL)
+data ApplicativeArg row col idL idR
+  = ApplicativeArgOne (LPat row col idL) (Exp row col idL)
+  | ApplicativeArgMany [ExpLStmt row col idL] (Exp row col idL) (LPat row col idL)
 
-data Splice id
-  = TypedSplice id (LExp id)
-  | UntypedSplice id (LExp id)
+data Splice row col id
+  = TypedSplice id (Exp row col id)
+  | UntypedSplice id (Exp row col id)
   | QuasiQuote id id SrcSpan FastString
 
 type SplicePointName = Name
 
-data PendingRnSplice
-  = PendingRnSplice UntypedSpliceFlavour SplicePointName (LExp Name)
+data PendingRnSplice row col
+  = PendingRnSplice UntypedSpliceFlavour SplicePointName (Exp row col Name)
 
 data UntypedSpliceFlavour
   = UntypedExpSplice
@@ -566,23 +583,23 @@ data UntypedSpliceFlavour
   | UntypedTypeSplice
   | UntypedDeclSplice
 
-data PendingTcSplice
-  = PendingTcSplice SplicePointName (LExp Id)
+data PendingTcSplice row col
+  = PendingTcSplice SplicePointName (Exp row col Id)
 
-data Bracket id
-  = ExpBr (LExp id)
-  | PatBr (LPat id)
-  | DecBrL [LDecl id]
-  | DecBrG (Group id)
-  | TypBr (LType id)
+data Bracket row col id
+  = ExpBr (Exp row col id)
+  | PatBr (LPat row col id)
+  | DecBrL [LDecl row col id]
+  | DecBrG (Group row col id)
+  | TypBr (LType row col id)
   | VarBr Bool id
-  | TExpBr (LExp id)
+  | TExpBr (Exp row col id)
 
-data ArithSeqInfo id
-  = From            (LExp id)
-  | FromThen        (LExp id) (LExp id)
-  | FromTo          (LExp id) (LExp id)
-  | FromThenTo      (LExp id) (LExp id) (LExp id)
+data ArithSeqInfo row col id
+  = From            (Exp row col id)
+  | FromThen        (Exp row col id) (Exp row col id)
+  | FromTo          (Exp row col id) (Exp row col id)
+  | FromThenTo      (Exp row col id) (Exp row col id) (Exp row col id)
 
 data MatchContext id
   = FunRhs id
@@ -612,18 +629,23 @@ data StmtContext id
 -------------------------------------------------------------------------------
 -- Pat
 
-type InPat id = LPat id
+type InPat row col id
+  = LPat row col id
 
-type OutPat id = LPat id
+type OutPat row col id
+  = LPat row col id
 
-type ConPatDetails id = ConDetails (LPat id) (RecFields id (LPat id))
+type ConPatDetails row col id
+  = ConDetails (LPat row col id) (RecFields id (LPat row col id))
 
 data RecFields id arg
   = RecFields [LRecField id arg] (Maybe Int)
 
-type RecField id arg = RecField' (FieldOcc id) arg
+type RecField id arg
+  = RecField' (FieldOcc id) arg
 
-type RecUpdField id = RecField' (AmbiguousFieldOcc id) (LExp id)
+type RecUpdField row col id
+  = RecField' (AmbiguousFieldOcc id) (Exp row col id)
 
 data RecField' id arg
   = RecField (Located id) arg Bool
@@ -658,59 +680,60 @@ data IEWildcard
 -------------------------------------------------------------------------------
 -- Binds
 
-type LBind id              = LBindLR id id
-type LBinds        id      = LBindsLR id id
-type LBindsLR      idL idR = Bag (LBindLR idL idR)
+type LBind      row col id      = LBindLR row col id id
+type LBinds     row col id      = LBindsLR row col id id
+type LBindsLR   row col idL idR = Bag (LBindLR row col idL idR)
 
 type LocalBinds id = LocalBindsLR id id
 
-data LocalBindsLR idL idR
-  = ValBinds (ValBindsLR idL idR)
-  | IPBinds (IPBinds idR)
+data LocalBindsLR  row col idL idR
+  = ValBinds (ValBindsLR row col idL idR)
+  | IPBinds (IPBinds row col idR)
   | EmptyLocalBinds
 
 type ValBinds id = ValBindsLR id id
 
-data ValBindsLR idL idR
-  = ValBindsIn (LBindsLR idL idR) [LSig idR]
-  | ValBindsOut [(RecFlag, LBinds idL)] [LSig Name]
+data ValBindsLR row col idL idR
+  = ValBindsIn (LBindsLR row col idL idR) [LSig row col idR]
+  | ValBindsOut [(RecFlag, LBinds row col idL)] [LSig row col Name]
 
 type Bind id = BindLR id id
 
 
-data BindLR idL idR
-  = FunBind (Located idL) (MatchGroup idR (LExp idR)) Wrapper
+data BindLR row col idL idR
+  = FunBind (Located idL) (MatchGroup row col idR (Exp row col idR)) Wrapper
             (PostRn idL NameSet) [Tickish Id]
-  | PatBind (LPat idL) (GRHSs idR (LExp idR)) (PostTc idR TCRType)
+  | PatBind (LPat row col idL)
+            (GRHSs row col idR (Exp row col idR)) (PostTc idR TCRType)
             (PostRn idL NameSet) ([Tickish Id], [[Tickish Id]])
-  | VarBind idL (LExp idR) Bool
-  | AbsBinds [TyVar] [EvVar] [ABExport idL] [TcEvBinds] (LBinds idL)
-  | AbsBindsSig [TyVar] [EvVar] idL TcSpecPrags TcEvBinds (LBind idL)
-  | PatSynBind (PatSynBind idL idR)
+  | VarBind idL (Exp row col idR) Bool
+  | AbsBinds [TyVar] [EvVar] [ABExport idL] [TcEvBinds] (LBinds row col idL)
+  | AbsBindsSig [TyVar] [EvVar] idL TcSpecPrags TcEvBinds (LBind row col idL)
+  | PatSynBind (PatSynBind row col idL idR)
 
 data ABExport id
   = ABE id id Wrapper TcSpecPrags
 
-data PatSynBind idL idR
+data PatSynBind row col idL idR
   = PSB (Located idL) (PostRn idR NameSet) (PatSynDetails (Located idR))
-        (LPat idR)    (PatSynDir idR)
+        (LPat row col idR)    (PatSynDir row col idR)
 
 -- IPBinds'
-data IPBinds id
-  = IPBinds' [LIPBind id] TcEvBinds
+data IPBinds row col id
+  = IPBinds' [LIPBind row col id] TcEvBinds
 
-data IPBind id
-  = IPBind (Either LIPName id) (LExp id)
+data IPBind row col id
+  = IPBind (Either LIPName id) (Exp row col id)
 
-data Sig id
-  = TypeSig [Located id] (LSigWcType id)
-  | PatSynSig (Located id) (LSigType id)
-  | ClassOpSig Bool [Located id] (LSigType id)
+data Sig row col id
+  = TypeSig [Located id] (LSigWcType row col id)
+  | PatSynSig (Located id) (LSigType row col id)
+  | ClassOpSig Bool [Located id] (LSigType row col id)
   | IdSig Id
   | FixSig (FixitySig id)
   | InlineSig (Located id) InlinePragma
-  | SpecSig (Located id) [LSigType id] InlinePragma
-  | SpecInstSig SourceText (LSigType id)
+  | SpecSig (Located id) [LSigType row col id] InlinePragma
+  | SpecInstSig SourceText (LSigType row col id)
   | MinimalSig SourceText (LBooleanFormula (Located id))
 
 data FixitySig id
@@ -731,110 +754,121 @@ data PatSynDetails a
 data RecordPatSynField a
   = RecordPatSynField a a
 
-data PatSynDir id
+data PatSynDir row col id
   = Unidirectional
   | ImplicitBidirectional
-  | ExplicitBidirectional (MatchGroup id (LExp id))
+  | ExplicitBidirectional (MatchGroup row col id (Exp row col id))
 
 ------------------------------------------------------------------------------
 -- Decls
 
-data Group id
-  = Group (ValBinds id) [LSpliceDecl id] [TyClGroup id] [LDerivDecl id]
-          [LFixitySig id] [LDefaultDecl id] [LForeignDecl id] [LWarnDecls id]
-          [LAnnDecl id] [LRuleDecls id] [LVectDecl id] [LDocDecl]
+data Group row col id
+  = Group (ValBinds row col id) [LSpliceDecl row col id] [TyClGroup row col id]
+          [LDerivDecl row col id]
+          [LFixitySig id] [LDefaultDecl row col id]
+          [LForeignDecl row col id] [LWarnDecls id]
+          [LAnnDecl row col id] [LRuleDecls row col id]
+          [LVectDecl row col id] [LDocDecl]
 
 data SpliceExplicitFlag
   = ExplicitSplice
   | ImplicitSplice
 
-data SpliceDecl id
-  = SpliceDecl (LSplice id) SpliceExplicitFlag
+data SpliceDecl row col id
+  = SpliceDecl (LSplice row col id) SpliceExplicitFlag
 
-data TyClDecl id
-  = FamDecl (FamilyDecl id)
-  | SynDecl (Located id) (LQTyVars id) (LType id) (PostRn id NameSet)
-  | DataDecl (Located id) (LQTyVars id) (DataDefn id) (PostRn id Bool)
+data TyClDecl row col id
+  = FamDecl (FamilyDecl row col id)
+  | SynDecl (Located id) (LQTyVars row col id)
+            (LType row col id) (PostRn id NameSet)
+  | DataDecl (Located id) (LQTyVars row col id)
+             (DataDefn row col id) (PostRn id Bool)
              (PostRn id NameSet)
-  | ClassDecl (LContext id) (Located id) (LQTyVars id)
-              [LFunDepL id] [LSig id] (LBinds id)
-              [LFamilyDecl id] [LTyFamDefltEqn id] [LDocDecl]
+  | ClassDecl (LContext row col id) (Located id) (LQTyVars row col id)
+              [LFunDepL id] [LSig row col id] (LBinds row col id)
+              [LFamilyDecl row col id] [LTyFamDefltEqn row col id] [LDocDecl]
               (PostRn id NameSet)
 
-data TyClGroup id
-  = TyClGroup [LTyClDecl id] [LRoleAnnotDecl id] [LInstDecl id]
+data TyClGroup row col id
+  = TyClGroup [LTyClDecl row col id] [LRoleAnnotDecl id] [LInstDecl row col id]
 
 -- KingSig --> KindSig'
-data FamilyResultSig id
+data FamilyResultSig row col id
   = NoSig
-  | KindSig' (LKind id)
-  | TyVarSig (LTyVarBndr id)
+  | KindSig' (LKind row col id)
+  | TyVarSig (LTyVarBndr row col id)
 
-data FamilyDecl id
-  = FamilyDecl (FamilyInfo id) (Located id) (LQTyVars id)
-               (LFamilyResultSig id) (Maybe (LInjectivityAnn id))
+data FamilyDecl row col id
+  = FamilyDecl (FamilyInfo row col id) (Located id) (LQTyVars row col id)
+               (LFamilyResultSig row col id) (Maybe (LInjectivityAnn id))
 
 data InjectivityAnn id
   = InjectivityAnn (Located id) [Located id]
 
-data FamilyInfo id
+data FamilyInfo row col id
   = DataFamily
   | OpenTypeFamily
-  | ClosedTypeFamily (Maybe [LTyFamInstEqn id])
+  | ClosedTypeFamily (Maybe [LTyFamInstEqn row col id])
 
-data DataDefn id
-  = DataDefn NewOrData (LContext id) (Maybe LCType)
-             (Maybe (LKind id)) [LConDecl id] (Deriving id)
+data DataDefn row col id
+  = DataDefn NewOrData (LContext row col id) (Maybe LCType)
+             (Maybe (LKind row col id)) [LConDecl row col id]
+             (Deriving row col id)
 
-type Deriving id = Maybe (LLSigTypes id)
+type Deriving row col id = Maybe (LLSigTypes row col id)
 
 data NewOrData
   = NewType
   | DataType
 
-data ConDecl id
-  = ConDeclGADT [Located id] (LSigType id) (Maybe LDocString)
-  | ConDeclH98 (Located id) (Maybe (LQTyVars id)) (Maybe (LContext id))
-               (ConDeclDetails id) (Maybe LDocString)
+data ConDecl row col id
+  = ConDeclGADT [Located id] (LSigType row col id) (Maybe LDocString)
+  | ConDeclH98 (Located id) (Maybe (LQTyVars row col id))
+               (Maybe (LContext row col id))
+               (ConDeclDetails row col id) (Maybe LDocString)
 
-type ConDeclDetails id =
-   ConDetails (LBangType id) (LLConDeclFields id)
+type ConDeclDetails row col id =
+   ConDetails (LBangType row col id) (LLConDeclFields row col id)
 
-type TyPats id = ImplicitBndrs id [LType id]
+type TyPats row col id
+  = ImplicitBndrs id [LType row col id]
 
-type TyFamInstEqn id = TyFamEqn id (TyPats id)
+type TyFamInstEqn row col id
+  = TyFamEqn row col id (TyPats row col id)
 
-type TyFamDefltEqn id = TyFamEqn id (LQTyVars id)
+type TyFamDefltEqn row col id
+  = TyFamEqn row col id (LQTyVars row col id)
 
-data TyFamEqn id pats
-  = TyFamEqn (Located id) pats (LType id)
+data TyFamEqn row col id pats
+  = TyFamEqn (Located id) pats (LType row col id)
 
-data TyFamInstDecl id
-  = TyFamInstDecl (LTyFamInstEqn id) (PostRn id NameSet)
+data TyFamInstDecl row col id
+  = TyFamInstDecl (LTyFamInstEqn row col id) (PostRn id NameSet)
 
-data DataFamInstDecl id
-  = DataFamInstDecl (Located id) (TyPats id) (DataDefn id)
+data DataFamInstDecl row col id
+  = DataFamInstDecl (Located id) (TyPats row col id) (DataDefn row col id)
                     (PostRn id NameSet)
 
-data ClsInstDecl id
-  = ClsInstDecl (LSigType id) (LBinds id) [LSig id] [LTyFamInstDecl id]
-                [LDataFamInstDecl id] (Maybe LOverlapMode)
+data ClsInstDecl row col id
+  = ClsInstDecl (LSigType row col id)
+                (LBinds row col id) [LSig row col id] [LTyFamInstDecl row col id]
+                [LDataFamInstDecl row col id] (Maybe LOverlapMode)
 
-data InstDecl id
-  = ClsInstD (ClsInstDecl id)
-  | DataFamInstD (DataFamInstDecl id)
-  | TyFamInstD (TyFamInstDecl id)
+data InstDecl row col id
+  = ClsInstD (ClsInstDecl row col id)
+  | DataFamInstD (DataFamInstDecl row col id)
+  | TyFamInstD (TyFamInstDecl row col id)
 
-data DerivDecl id
-  = DerivDecl (LSigType id) (Maybe LOverlapMode)
+data DerivDecl row col id
+  = DerivDecl (LSigType row col id) (Maybe LOverlapMode)
 
-data DefaultDecl id
-  = DefaultDecl [LType id]
+data DefaultDecl row col id
+  = DefaultDecl [LType row col id]
 
-data ForeignDecl id
-  = ForeignImport (Located id) (LSigType id) (PostTc id Coercion)
+data ForeignDecl row col id
+  = ForeignImport (Located id) (LSigType row col id) (PostTc id Coercion)
                   ForeignImport
-  | ForeignExport (Located id) (LSigType id) (PostTc id Coercion)
+  | ForeignExport (Located id) (LSigType row col id) (PostTc id Coercion)
                   ForeignExport
 
 data ForeignImport
@@ -848,26 +882,26 @@ data CImportSpec
 data ForeignExport
   = CExport LCExportSpec LSourceText
 
-data RuleDecls id
-  = Rules SourceText [LRuleDecl id]
+data RuleDecls row col id
+  = Rules SourceText [LRuleDecl row col id]
 
-data RuleDecl id
+data RuleDecl row col id
   = Rule LSrcTextRuleName
-         Activation [LRuleBndr id] (LExp id)
-         (PostRn id NameSet) (LExp id) (PostRn id NameSet)
+         Activation [LRuleBndr row col id] (Exp row col id)
+         (PostRn id NameSet) (Exp row col id) (PostRn id NameSet)
 
-data RuleBndr id
+data RuleBndr row col id
   = RuleBndr (Located id)
-  | RuleBndrSig (Located id) (LSigWcType id)
+  | RuleBndrSig (Located id) (LSigWcType row col id)
 
-data VectDecl id
-  = Vect SourceText (Located id) (LExp id)
+data VectDecl row col id
+  = Vect SourceText (Located id) (Exp row col id)
   | NoVect SourceText (Located id)
   | VectTypeIn SourceText Bool (Located id) (Maybe (Located id))
   | VectTypeOut Bool TyCon (Maybe TyCon)
   | VectClassIn SourceText (Located id)
   | VectClassOut Class
-  | VectInstIn (LSigType id)
+  | VectInstIn (LSigType row col id)
   | VectInstOut ClsInst
 
 data DocDecl
@@ -882,8 +916,8 @@ data WarnDecls id
 data WarnDecl id
   = Warning [Located id] WarningTxt
 
-data AnnDecl id
-  = Annotation SourceText (AnnProvenance id) (LExp id)
+data AnnDecl row col id
+  = Annotation SourceText (AnnProvenance id) (Exp row col id)
 
 data AnnProvenance id
   = ValueAnnProvenance (Located id)
@@ -898,12 +932,13 @@ data RoleAnnotDecl id
 
 type BangType id = Type id
 
-type Context id = [LType id]
+type Context row col id
+  = [LType row col id]
 
 type Kind id = Type id
 
-data LQTyVars id
-  = QTvs (PostRn id [Name]) [LTyVarBndr id] (PostRn id NameSet)
+data LQTyVars row col id
+  = QTvs (PostRn id [Name]) [LTyVarBndr row col id] (PostRn id NameSet)
 
 data ImplicitBndrs id thing
   = IB (PostRn id [Name]) thing
@@ -911,17 +946,20 @@ data ImplicitBndrs id thing
 data WildCardBndrs id thing
   = WC (PostRn id [Name]) (Maybe SrcSpan) thing
 
-type LSigType id = ImplicitBndrs id (LType id)
+type LSigType row col id
+  = ImplicitBndrs id (LType row col id)
 
-type LWcType id = WildCardBndrs id (LType id)
+type LWcType row col id
+  = WildCardBndrs id (LType row col id)
 
-type LSigWcType id = ImplicitBndrs id (LWcType id)
+type LSigWcType row col id
+  = ImplicitBndrs id (LWcType row col id)
 
 newtype IPName = IPName FastString
 
-data TyVarBndr id
+data TyVarBndr row col id
   = UserTyVar (Located id)
-  | KindedTyVar (Located id) (LKind id)
+  | KindedTyVar (Located id) (LKind row col id)
 
 data TyLit
   = NumTy SourceText Integer
@@ -930,9 +968,9 @@ data TyLit
 newtype WildCardInfo id
   = AnonWildCard (PostRn id LName)
 
-data AppType id
+data AppType row col id
   = AppInfix (Located id)
-  | AppPrefix (LType id)
+  | AppPrefix (LType row col id)
 
 data TupleSort
   = UnboxedTuple
@@ -940,8 +978,8 @@ data TupleSort
   | ConstraintTuple
   | BoxedOrConstraintTuple
 
-data ConDeclField id
-  = ConDeclField [LFieldOcc id] (LBangType id) (Maybe LDocString)
+data ConDeclField row col id
+  = ConDeclField [LFieldOcc id] (LBangType row col id) (Maybe LDocString)
 
 data ConDetails arg rec
   = PrefixCon [arg]
