@@ -127,6 +127,8 @@ data Exp row col id
 
   | Wrap      Wrapper (Exp row col id)
 
+  | Ext       (col (Exp row col id))
+
 data Pat row col id
   = WildPat   (PostTc id TCRType)
 
@@ -684,20 +686,20 @@ type LBind      row col id      = LBindLR row col id id
 type LBinds     row col id      = LBindsLR row col id id
 type LBindsLR   row col idL idR = Bag (LBindLR row col idL idR)
 
-type LocalBinds id = LocalBindsLR id id
+type LocalBinds row col id = LocalBindsLR row col id id
 
 data LocalBindsLR  row col idL idR
   = ValBinds (ValBindsLR row col idL idR)
   | IPBinds (IPBinds row col idR)
   | EmptyLocalBinds
 
-type ValBinds id = ValBindsLR id id
+type ValBinds row col id = ValBindsLR row col id id
 
 data ValBindsLR row col idL idR
   = ValBindsIn (LBindsLR row col idL idR) [LSig row col idR]
   | ValBindsOut [(RecFlag, LBinds row col idL)] [LSig row col Name]
 
-type Bind id = BindLR id id
+type Bind row col id = BindLR row col id id
 
 
 data BindLR row col idL idR
