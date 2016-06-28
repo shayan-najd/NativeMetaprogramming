@@ -1,78 +1,112 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE DataKinds #-}
 module SyntaxProductIndexed where
 
 data Exp row col id
-  = Var      (Located id)
-  | UnboundVar UnboundVar
+  = Var             (row 'VarL)
+                    (Located id)
+
+  | UnboundVar      (row 'UnboundVarL)
+                    UnboundVar
+
 --  HSE.Con (missing?)
 
-  | Lit      Lit
-  | OverLit  (OverLit row col id)
+  | Lit             (row 'LitL)
+                    Lit
 
-  | App      (Exp row col id) (Exp row col id)
+  | OverLit         (row 'OverLitL)
+                    (OverLit row col id)
 
-  | SectionL (Exp row col id) (Exp row col id)
+  | App             (row 'AppL)
+                    (Exp row col id) (Exp row col id)
 
-  | SectionR (Exp row col id) (Exp row col id)
+  | SectionL        (row 'SectionLL)
+                    (Exp row col id) (Exp row col id)
 
-  | NegApp   (Exp row col id) (SyntaxExp row col id)
+  | SectionR        (row 'SectionRL)
+                    (Exp row col id) (Exp row col id)
 
-  | OpApp    (Exp row col id) (Exp row col id) (PostRn id Fixity)
-             (Exp row col id)
+  | NegApp          (row 'NegAppL)
+                    (Exp row col id) (SyntaxExp row col id)
 
-  | AppType    (Exp row col id) (LWcType row col id)
-  | AppTypeOut (Exp row col id) (LWcType row col Name)
+  | OpApp           (row 'OpAppL)
+                    (Exp row col id) (Exp row col id) (PostRn id Fixity)
+                    (Exp row col id)
 
-  | Par      (Exp row col id)
+  | AppType         (row 'AppTypeL)
+                    (Exp row col id) (LWcType row col id)
+  | AppTypeOut      (row 'AppTypeOutL)
+                    (Exp row col id) (LWcType row col Name)
 
-  | If       (Maybe (SyntaxExp row col id))
-             (Exp row col id) (Exp row col id) (Exp row col id)
+  | Par             (row 'ParL)
+                    (Exp row col id)
 
-  | MultiIf  (PostTc id TCRType) [LGRHS row col id (Exp row col id)]
+  | If              (row 'IfL)
+                    (Maybe (SyntaxExp row col id))
+                    (Exp row col id) (Exp row col id) (Exp row col id)
 
-  | Case     (Exp row col id) (MatchGroup row col id (Exp row col id))
+  | MultiIf         (row 'MultiIfL)
+                    (PostTc id TCRType) [LGRHS row col id (Exp row col id)]
 
-  | Lam      (MatchGroup row col id (Exp row col id))
+  | Case            (row 'CaseL)
+                    (Exp row col id) (MatchGroup row col id (Exp row col id))
 
-  | LamCase  (MatchGroup row col id (Exp row col id))
+  | Lam             (row 'LamL)
+                    (MatchGroup row col id (Exp row col id))
 
-  | Let      (LLocalBinds row col id) (Exp row col id)
+  | LamCase         (row 'LamCaseL)
+                    (MatchGroup row col id (Exp row col id))
 
-  | IPVar    IPName
+  | Let             (row 'LetL)
+                    (LLocalBinds row col id) (Exp row col id)
 
-  | RecFld    (AmbiguousFieldOcc id)
+  | IPVar           (row 'IPVarL)
+                    IPName
 
-  | OverLabel FastString
+  | RecFld          (row 'RecFldL)
+                    (AmbiguousFieldOcc id)
 
-  | RecordCon (Located id) (PostTc id ConLike) (PostTcExp row col)
-              (RecordBinds row col id)
+  | OverLabel       (row 'OverLabelL)
+                    FastString
 
-  | RecordUpd (Exp row col id) [LRecUpdField row col id] (PostTc id [ConLike])
-              (PostTc id [TCRType]) (PostTc id [TCRType]) (PostTc id Wrapper)
+  | RecordCon       (row 'RecordConL)
+                    (Located id) (PostTc id ConLike) (PostTcExp row col)
+                    (RecordBinds row col id)
 
-  | ExplicitTuple [LTupArg row col id] Boxity
+  | RecordUpd       (row 'RecordUpdL)
+                    (Exp row col id) [LRecUpdField row col id]
+                    (PostTc id [ConLike]) (PostTc id [TCRType])
+                    (PostTc id [TCRType]) (PostTc id Wrapper)
+
+  | ExplicitTuple   (row 'ExplicitTupleL)
+                    [LTupArg row col id] Boxity
 --  HSE.TupleSection (part of above?)
 
-  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp row col id))
-                 [Exp row col id]
+  | ExplicitList    (row 'ExplicitListL)
+                    (PostTc id TCRType) (Maybe (SyntaxExp row col id))
+                    [Exp row col id]
 
-  | ExplicitPArr (PostTc id TCRType) [Exp row col id]
+  | ExplicitPArr    (row 'ExplicitPArrL)
+                    (PostTc id TCRType) [Exp row col id]
 
-  | ArithSeq  (PostTcExp row col) (Maybe (SyntaxExp row col id))
-              (ArithSeqInfo row col id)
+  | ArithSeq        (row 'ArithSeqL)
+                    (PostTcExp row col) (Maybe (SyntaxExp row col id))
+                    (ArithSeqInfo row col id)
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
 
-  | PArrSeq   (PostTcExp row col)
-              (ArithSeqInfo row col id) -- expanding ArithSeqInfo below
+  | PArrSeq         (row 'PArrSeqL)
+                    (PostTcExp row col)
+                    (ArithSeqInfo row col id) -- expanding ArithSeqInfo below
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
 
-  | Do           (StmtContext Name) (LExpLStmts row col id) (PostTc id TCRType)
+  | Do              (row 'DoL)
+                    (StmtContext Name) (LExpLStmts row col id) (PostTc id TCRType)
 --  StmtContext.ListComp
 --  StmtContext.MonadComp
 --  StmtContext.ParArrComp
@@ -84,50 +118,71 @@ data Exp row col id
 --  StmtContext.ParStmtCtxt
 --  StmtContext.TransStmtCtxt
 
-  | Bracket      (Bracket row col id)
-  | RnBracketOut (Bracket row col Name) [PendingRnSplice row col]
-  | TcBracketOut (Bracket row col Name) [PendingTcSplice row col]
+  | Bracket         (row 'BracketL)
+                    (Bracket row col id)
+  | RnBracketOut    (row 'RnBracketOutL)
+                    (Bracket row col Name) [PendingRnSplice row col]
+  | TcBracketOut    (row 'TcBracketOutL)
+                    (Bracket row col Name) [PendingTcSplice row col]
 --  HSE.QuasiQuote (missing?)
 
 --  HSE.VarQuote (missing?)
 --  HSE.TypQuote (missing?)
 
-  | SpliceE  (Splice row col id)
+  | SpliceE         (row 'SpliceEL)
+                    (Splice row col id)
 
-  | ExpWithTySig (Exp row col id) (LSigWcType row col id)
-  | ExpWithTySigOut (Exp row col id) (LSigWcType row col Name)
+  | ExpWithTySig    (row 'ExpWithTySigL)
+                    (Exp row col id) (LSigWcType row col id)
+  | ExpWithTySigOut (row 'ExpWithTySigOutL)
+                    (Exp row col id) (LSigWcType row col Name)
 
-  | CoreAnn   SourceText StringLiteral (Exp row col id)
-  | SCC       SourceText StringLiteral (Exp row col id)
-  | TickPragma SourceText (StringLiteral,(Int,Int),(Int,Int))
-               ((SourceText,SourceText),(SourceText,SourceText))
-               (Exp row col id) -- (is it GenPragma?)
+  | CoreAnn         (row 'CoreAnnL)
+                    SourceText StringLiteral (Exp row col id)
+  | SCC             (row 'SCCL)
+                    SourceText StringLiteral (Exp row col id)
+  | TickPragma      (row 'TickPragmaL)
+                    SourceText (StringLiteral,(Int,Int),(Int,Int))
+                    ((SourceText,SourceText),(SourceText,SourceText))
+                    (Exp row col id) -- (is it GenPragma?)
 
-  | Proc      (LPat row col id) (LCmdTop row col id)
+  | Proc            (row 'ProcL)
+                    (LPat row col id) (LCmdTop row col id)
 
-  | ArrApp    (Exp row col id) (Exp row col id) (PostTc id TCRType)
-              ArrAppType Bool
+  | ArrApp          (row 'ArrAppL)
+                    (Exp row col id) (Exp row col id) (PostTc id TCRType)
+                    ArrAppType Bool
 --  HSE.LeftArrHighApp (don't know how they compare)
-  | ArrForm   (Exp row col id) (Maybe Fixity) [LCmdTop row col id]
+  | ArrForm         (row 'ArrFormL)
+                    (Exp row col id) (Maybe Fixity) [LCmdTop row col id]
 --  HSE.RightArrHighApp (don't know how they compare)
 
-  | EWildPat -- (right comparison?)
+  | EWildPat        (row 'EWildPatL)
+                    -- (right comparison?)
 
-  | Static    (Exp row col id)
+  | Static          (row 'StaticL)
+                    (Exp row col id)
 
-  | Tick      (Tickish id) (Exp row col id)
+  | Tick            (row 'TickL)
+                    (Tickish id) (Exp row col id)
 
-  | BinTick   Int Int (Exp row col id)
+  | BinTick         (row 'BinTickL)
+                    Int Int (Exp row col id)
 
-  | EAsPat    (Located id) (Exp row col id)
+  | EAsPat          (row 'EAsPatL)
+                    (Located id) (Exp row col id)
 
-  | EViewPat  (Exp row col id) (Exp row col id)
+  | EViewPat        (row 'EViewPatL)
+                    (Exp row col id) (Exp row col id)
 
-  | ELazyPat  (Exp row col id)
+  | ELazyPat        (row 'ELazyPatL)
+                    (Exp row col id)
 
-  | Wrap      Wrapper (Exp row col id)
+  | Wrap            (row 'WrapL)
+                    Wrapper (Exp row col id)
 
-  | Ext       (col (Exp row col id))
+  | Ext             (row 'ExtL)
+                    (col (Exp row col id))
 
 data Pat row col id
   = WildPat   (PostTc id TCRType)
@@ -994,3 +1049,105 @@ data FieldOcc id
 data AmbiguousFieldOcc id
   = Unambiguous LRdrName (PostRn id id)
   | Ambiguous LRdrName (PostTc id id)
+
+
+data ExpL
+  = VarL
+
+  | UnboundVarL
+
+  | LitL
+
+  | OverLitL
+
+  | AppL
+
+  | SectionLL
+
+  | SectionRL
+
+  | NegAppL
+
+  | OpAppL
+
+  | AppTypeL
+
+  | AppTypeOutL
+
+  | ParL
+
+  | IfL
+
+  | MultiIfL
+
+  | CaseL
+
+  | LamL
+
+  | LamCaseL
+
+  | LetL
+
+  | IPVarL
+
+  | RecFldL
+
+  | OverLabelL
+
+  | RecordConL
+
+  | RecordUpdL
+
+  | ExplicitTupleL
+
+  | ExplicitListL
+
+  | ExplicitPArrL
+
+  | ArithSeqL
+
+  | PArrSeqL
+
+  | DoL
+
+  | BracketL
+
+  | RnBracketOutL
+
+  | TcBracketOutL
+
+  | SpliceEL
+
+  | ExpWithTySigL
+
+  | ExpWithTySigOutL
+
+  | CoreAnnL
+
+  | SCCL
+
+  | TickPragmaL
+
+  | ProcL
+
+  | ArrAppL
+
+  | ArrFormL
+
+  | EWildPatL
+
+  | StaticL
+
+  | TickL
+
+  | BinTickL
+
+  | EAsPatL
+
+  | EViewPatL
+
+  | ELazyPatL
+
+  | WrapL
+
+  | ExtL
