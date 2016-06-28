@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DataKinds #-}
 module SyntaxProductIndexed where
@@ -5,15 +6,13 @@ module SyntaxProductIndexed where
 data Exp row col id
   = Var             (row 'VarL)
                     (Located id)
-
   | UnboundVar      (row 'UnboundVarL)
                     UnboundVar
-
 --  HSE.Con (missing?)
+--                  \n
 
   | Lit             (row 'LitL)
                     Lit
-
   | OverLit         (row 'OverLitL)
                     (OverLit row col id)
 
@@ -81,6 +80,7 @@ data Exp row col id
   | ExplicitTuple   (row 'ExplicitTupleL)
                     [LTupArg row col id] Boxity
 --  HSE.TupleSection (part of above?)
+--                  \n
 
   | ExplicitList    (row 'ExplicitListL)
                     (PostTc id TCRType) (Maybe (SyntaxExp row col id))
@@ -93,29 +93,41 @@ data Exp row col id
                     (PostTcExp row col) (Maybe (SyntaxExp row col id))
                     (ArithSeqInfo row col id)
 --  ArithSeqInfo.From
+--                  \n
 --  ArithSeqInfo.FromTo
+--                  \n
 --  ArithSeqInfo.FromThen
+--                  \n
 --  ArithSeqInfo.FromThenTo
+--                  \n
 
   | PArrSeq         (row 'PArrSeqL)
                     (PostTcExp row col)
                     (ArithSeqInfo row col id) -- expanding ArithSeqInfo below
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
+--                  \n
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
+--                  \n
 
   | Do              (row 'DoL)
-                    (StmtContext Name) (LExpLStmts row col id) (PostTc id TCRType)
+                    (StmtContext Name) (LExpLStmts row col id)
+                    (PostTc id TCRType)
 --  StmtContext.ListComp
+--                  \n
 --  StmtContext.MonadComp
 --  StmtContext.ParArrComp
+--                  \n
 --  StmtContext.DoExp
+--                  \n
 --  StmtContext.MDoExp
+--                  \n
 --  StmtContext.ArrowExp
 --  StmtContext.GhciStmtCtxt
 --  StmtContext.PatGuard
 --  StmtContext.ParStmtCtxt
+--                  \n
 --  StmtContext.TransStmtCtxt
 
   | Bracket         (row 'BracketL)
@@ -125,9 +137,12 @@ data Exp row col id
   | TcBracketOut    (row 'TcBracketOutL)
                     (Bracket row col Name) [PendingTcSplice row col]
 --  HSE.QuasiQuote (missing?)
+--                  \n
 
 --  HSE.VarQuote (missing?)
+--                  \n
 --  HSE.TypQuote (missing?)
+--                  \n
 
   | SpliceE         (row 'SpliceEL)
                     (Splice row col id)
@@ -153,6 +168,7 @@ data Exp row col id
                     (Exp row col id) (Exp row col id) (PostTc id TCRType)
                     ArrAppType Bool
 --  HSE.LeftArrHighApp (don't know how they compare)
+--                  \n
   | ArrForm         (row 'ArrFormL)
                     (Exp row col id) (Maybe Fixity) [LCmdTop row col id]
 --  HSE.RightArrHighApp (don't know how they compare)
@@ -222,8 +238,8 @@ data Pat row col id
   | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds
               (ConPatDetails row col id)
               Wrapper
---  PRec
---  PInfixApp
+--  HSE.PRec
+--  HSE.PInfixApp
 
   | SplicePat (Splice row col id)
 
@@ -270,7 +286,7 @@ data Decl row col id
   | DefD (DefaultDecl row col id)
 
   | ForD (ForeignDecl row col id)
---   \n
+--        \n
 --  ForExp (in ForeignDecl)
 
   | SpliceD (SpliceDecl row col id)

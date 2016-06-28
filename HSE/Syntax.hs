@@ -1,124 +1,204 @@
+{-# OPTIONS_GHC -Wall #-}
+
 
 module Syntax where
 
 data Exp l
-  = Var          l (QName l)
---  HsSyn.UnboundVar (missing?)
-  | Con          l (QName l)
+  = Var                l
+                       (QName l)
+--  HsSyn.UnboundVar   (missing?)
+--                     \n
+  | Con                l
+                       (QName l)
 
-  | Lit          l (Literal l)
---  HsSyn.OverLit (missing?)
+  | Lit                l
+                       (Literal l)
+--  HsSyn.OverLit      (missing?)
+--                     \n
 
-  | App          l (Exp l) (Exp l)
+  | App                l
+                       (Exp l) (Exp l)
 
-  | LeftSection  l (Exp l) (QOp l)
+  | LeftSection        l
+                       (Exp l) (QOp l)
 
-  | RightSection l (QOp l) (Exp l)
+  | RightSection       l
+                       (QOp l) (Exp l)
 
-  | NegApp       l (Exp l)
+  | NegApp             l
+                       (Exp l)
 
-  | InfixApp     l (Exp l) (QOp l) (Exp l)
+  | InfixApp           l
+                       (Exp l) (QOp l) (Exp l)
+--                     \n
 
--- HsSyn.AppType    (missing?)
--- HsSyn.AppTypeOut (missing?)
+-- HsSyn.AppType       (missing?)
+--                     \n
+-- HsSyn.AppTypeOut    (missing?)
+--                     \n
 
-  | Paren        l (Exp l)
+  | Paren              l
+                       (Exp l)
 
-  | If           l (Exp l) (Exp l) (Exp l)
+  | If                 l
+                       (Exp l) (Exp l) (Exp l)
+--                     \n
 
-  | MultiIf      l [GuardedRhs l]
+  | MultiIf            l
+                       [GuardedRhs l]
 
-  | Case         l (Exp l) [Alt l]
+  | Case               l
+                       (Exp l) [Alt l]
 
-  | Lambda       l [Pat l] (Exp l)
+  | Lambda             l
+                       [Pat l] (Exp l)
 
-  | LCase        l [Alt l]
+  | LCase              l
+                       [Alt l]
 
-  | Let          l (Binds l) (Exp l)
+  | Let                l
+                       (Binds l) (Exp l)
 
-  | IPVar        l (IPName l)
+  | IPVar              l
+                       (IPName l)
 
--- HsSyn.RecFld    (missing?)
+-- HsSyn.RecFld        (missing?)
+--                     \n
 
--- HsSyn.OverLabel (missing?)
+-- HsSyn.OverLabel     (missing?)
+--                     \n
 
-  | RecConstr    l (QName l) [FieldUpdate l]
+  | RecConstr          l
+                       (QName l) [FieldUpdate l]
+--                     \n
 
-  | RecUpdate    l (Exp l)   [FieldUpdate l]
--- \n
+  | RecUpdate          l
+                       (Exp l)   [FieldUpdate l]
+--                     \n
+--                     \n
 
-  | Tuple              l Boxed [Exp l]
-  | TupleSection       l Boxed [Maybe (Exp l)]
+  | Tuple              l
+                       Boxed [Exp l]
+  | TupleSection       l
+                       Boxed [Maybe (Exp l)]
 
-  | List               l [Exp l]
+  | List               l
+                       [Exp l]
+--                     \n
 
-  | ParArray           l [Exp l]
+  | ParArray           l
+                       [Exp l]
 
 --  HsSyn groups below
-  | EnumFrom           l (Exp l)
-  | EnumFromTo         l (Exp l) (Exp l)
-  | EnumFromThen       l (Exp l) (Exp l)
-  | EnumFromThenTo     l (Exp l) (Exp l) (Exp l)
+--                     \n
+--                     \n
+  | EnumFrom           l
+                       (Exp l)
+  | EnumFromTo         l
+                       (Exp l) (Exp l)
+  | EnumFromThen       l
+                       (Exp l) (Exp l)
+  | EnumFromThenTo     l
+                       (Exp l) (Exp l) (Exp l)
 
 --  HsSyn groups below
+--                     \n
+--                     \n
 --  ParArrayFrom       (missing?)
-  | ParArrayFromTo     l (Exp l) (Exp l)
+  | ParArrayFromTo     l
+                       (Exp l) (Exp l)
 --  ParArrayFromThen   (missing?)
-  | ParArrayFromThenTo l (Exp l) (Exp l) (Exp l)
+  | ParArrayFromThenTo l
+                       (Exp l) (Exp l) (Exp l)
 
 --  HsSyn groups below
-  | ListComp           l (Exp l) [QualStmt l]
+--                     \n
+--                     \n
+  | ListComp           l
+                       (Exp l) [QualStmt l]
 --  HsSyn.MonadComp          (missing? same as ListComp?)
-  | ParArrayComp       l (Exp l) [[QualStmt l]]
-  | Do                 l [Stmt l]
-  | MDo                l [Stmt l]
+  | ParArrayComp       l
+                       (Exp l) [[QualStmt l]]
+  | Do                 l
+                       [Stmt l]
+  | MDo                l
+                       [Stmt l]
 --  HsSyn.ArrowExp            (?)
 --  HsSyn.GhciStmtCtxt (missing?)
 --  HsSyn.PatGuard  (missing?)
-  | ParComp            l (Exp l) [[QualStmt l]]
+  | ParComp            l
+                       (Exp l) [[QualStmt l]]
 --  HsSyn.TransStmtCtxt (missing?)
 
-  | BracketExp l (Bracket l)
+  | BracketExp         l
+                       (Bracket l)
 --  RnBracketOut
+--                     \n
 --  TcBracketOut
-  | QuasiQuote l String String
+--                     \n
+  | QuasiQuote         l
+                       String String
 
-  | VarQuote l (QName l)
-  | TypQuote l (QName l)
+  | VarQuote           l
+                       (QName l)
+  | TypQuote           l
+                       (QName l)
 
-  | SpliceExp l (Splice l)
+  | SpliceExp          l
+                       (Splice l)
 
-  | ExpTypeSig         l (Exp l) (Type l)
+  | ExpTypeSig         l
+                       (Exp l) (Type l)
 --  HsSyn.ExpWithTySigOut (unnecessary)
+--                     \n
 
-  | CorePragma l      String (Exp l)
-  | SCCPragma  l      String (Exp l)
-  | GenPragma  l      String (Int, Int) (Int, Int) (Exp l)
---                    \n
---                    \n
+  | CorePragma         l
+                       String (Exp l)
+  | SCCPragma          l
+                       String (Exp l)
+  | GenPragma          l
+                       String (Int, Int) (Int, Int) (Exp l)
+--                     \n
+--                     \n
 
-  | Proc            l (Pat l) (Exp l)
+  | Proc               l
+                       (Pat l) (Exp l)
 
-  | LeftArrApp      l (Exp l) (Exp l)
-  | RightArrApp     l (Exp l) (Exp l)
-  | LeftArrHighApp  l (Exp l) (Exp l)
-  | RightArrHighApp l (Exp l) (Exp l)
+  | LeftArrApp         l
+                       (Exp l) (Exp l)
+  | RightArrApp        l
+                       (Exp l) (Exp l)
+  | LeftArrHighApp     l
+                       (Exp l) (Exp l)
+  | RightArrHighApp    l
+                       (Exp l) (Exp l)
 
-  | ExprHole l
+  | ExprHole           l
+--                     \n
 
--- HsSyn.Static   (missing?)
+-- HsSyn.Static        (missing?)
+--                     \n
 
--- HsSyn.Tick     (missing?)
+-- HsSyn.Tick          (missing?)
+--                     \n
 
--- HsSyn.BinTick  (missing?)
+-- HsSyn.BinTick       (missing?)
+--                     \n
 
--- HsSyn.EAsPat   (missing?)
+-- HsSyn.EAsPat        (missing?)
+--                     \n
 
--- HsSyn.EViewPat (missing?)
+-- HsSyn.EViewPat      (missing?)
+--                     \n
 
--- HsSyn.ELazyPat (missing?)
+-- HsSyn.ELazyPat      (missing?)
+--                     \n
 
--- HsSyn.Wrap     (missing?)
+-- HsSyn.Wrap          (missing?)
+--                     \n
+
+--
+--
 
 data Pat l
   = PWildCard   l
@@ -127,15 +207,17 @@ data Pat l
 
   | PLit        l (Sign l) (Literal l)
 --  HsSyn.NPat (?)
---  \n
+--              \n
+--              \n
 
   | PNPlusK     l (Name l) Integer
--- \n
+--              \n
+--              \n
 
   | PTuple      l Boxed [Pat l]
 
   | PList       l [Pat l]
--- \n
+--              \n
 
   | PParen      l (Pat l)
 
@@ -154,7 +236,8 @@ data Pat l
 
   | PApp        l (QName l) [Pat l]
 --  HsSyn.ConPatOut (unnecessary)
---   \n
+--              \n
+--              \n
   | PRec        l (QName l) [PatField l]
   | PInfixApp   l (Pat l) (QName l) (Pat l)
 
@@ -202,8 +285,8 @@ data Decl l
 
   | DefaultDecl       l [Type l]
 
-  | ForImp            l (CallConv l) (Maybe (Safety l)) (Maybe String) (Name l)
-                        (Type l)
+  | ForImp            l (CallConv l) (Maybe (Safety l)) (Maybe String)
+                        (Name l) (Type l)
   | ForExp            l (CallConv l) (Maybe String) (Name l) (Type l)
 
   | SpliceDecl        l (Exp l)

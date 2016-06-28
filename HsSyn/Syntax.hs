@@ -1,124 +1,204 @@
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ExistentialQuantification #-}
+
 module Syntax where
 
 data Exp id
   = Var      (Located id)
+--           \n
   | UnboundVar UnboundVar
+--           \n
 --  HSE.Con (missing?)
+--           \n
 
   | Lit      Lit
+--           \n
   | OverLit  (OverLit id)
+--           \n
 
   | App      (LExp id) (LExp id)
+--           \n
 
   | SectionL (LExp id) (LExp id)
+--           \n
 
   | SectionR (LExp id) (LExp id)
+--           \n
 
   | NegApp   (LExp id) (SyntaxExp id)
+--           \n
 
-  | OpApp    (LExp id) (LExp id) (PostRn id Fixity) (LExp id)
+  | OpApp    (LExp id) (LExp id) (PostRn id Fixity)
+             (LExp id)
+--           \n
 
   | AppType    (LExp id) (LWcType id)
+--           \n
   | AppTypeOut (LExp id) (LWcType Name)
+--           \n
 
   | Par      (LExp id)
+--           \n
 
   | If       (Maybe (SyntaxExp id)) (LExp id) (LExp id) (LExp id)
+--           \n
+--           \n
 
   | MultiIf  (PostTc id TCRType) [LGRHS id (LExp id)]
+--           \n
 
   | Case     (LExp id) (MatchGroup id (LExp id))
+--           \n
 
   | Lam      (MatchGroup id (LExp id))
+--           \n
 
   | LamCase  (MatchGroup id (LExp id))
+--           \n
 
   | Let      (LLocalBinds id) (LExp  id)
+--           \n
 
   | IPVar    IPName
+--           \n
 
   | RecFld    (AmbiguousFieldOcc id)
+--           \n
 
   | OverLabel FastString
+--           \n
 
-  | RecordCon (Located id) (PostTc id ConLike) PostTcExp (RecordBinds id)
+  | RecordCon (Located id) (PostTc id ConLike) PostTcExp
+              (RecordBinds id)
+--           \n
 
-  | RecordUpd (LExp id) [LRecUpdField id] (PostTc id [ConLike])
-              (PostTc id [TCRType]) (PostTc id [TCRType]) (PostTc id Wrapper)
+  | RecordUpd (LExp id) [LRecUpdField id]
+              (PostTc id [ConLike]) (PostTc id [TCRType])
+              (PostTc id [TCRType]) (PostTc id Wrapper)
+--           \n
 
   | ExplicitTuple [LTupArg id] Boxity
+--           \n
 --  HSE.TupleSection (part of above?)
+--           \n
 
-  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp id)) [LExp id]
+  | ExplicitList (PostTc id TCRType) (Maybe (SyntaxExp id))
+                 [LExp id]
+--           \n
 
   | ExplicitPArr (PostTc id TCRType) [LExp id]
+--           \n
 
-  | ArithSeq  PostTcExp (Maybe (SyntaxExp id)) (ArithSeqInfo id)
+  | ArithSeq  PostTcExp (Maybe (SyntaxExp id))
+              (ArithSeqInfo id)
+--           \n
+--  ArithSeqInfo.From
+--           \n
+--  ArithSeqInfo.FromTo
+--           \n
+--  ArithSeqInfo.FromThen
+--           \n
+--  ArithSeqInfo.FromThenTo
+--           \n
+
+  | PArrSeq   PostTcExp
+              (ArithSeqInfo id) -- expanding ArithSeqInfo below
+--           \n
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
+--           \n
 --  ArithSeqInfo.FromThen
 --  ArithSeqInfo.FromThenTo
+--           \n
 
-  | PArrSeq   PostTcExp (ArithSeqInfo id) -- expanding ArithSeqInfo below
---  ArithSeqInfo.From
---  ArithSeqInfo.FromTo
---  ArithSeqInfo.FromThen
---  ArithSeqInfo.FromThenTo
-
-  | Do           (StmtContext Name) (LExpLStmts id) (PostTc id TCRType)
+  | Do           (StmtContext Name) (LExpLStmts id)
+                 (PostTc id TCRType)
+--           \n
 --  StmtContext.ListComp
+--           \n
 --  StmtContext.MonadComp
 --  StmtContext.ParArrComp
+--           \n
 --  StmtContext.DoExp
+--           \n
 --  StmtContext.MDoExp
+--           \n
 --  StmtContext.ArrowExp
 --  StmtContext.GhciStmtCtxt
 --  StmtContext.PatGuard
 --  StmtContext.ParStmtCtxt
+--           \n
 --  StmtContext.TransStmtCtxt
 
   | Bracket      (Bracket id)
+--           \n
   | RnBracketOut (Bracket Name) [PendingRnSplice]
+--           \n
   | TcBracketOut (Bracket Name) [PendingTcSplice]
+--           \n
 --  HSE.QuasiQuote (missing?)
+--           \n
 
 --  HSE.VarQuote (missing?)
+--           \n
 --  HSE.TypQuote (missing?)
+--           \n
 
   | SpliceE  (Splice id)
+--           \n
 
   | ExpWithTySig (LExp id) (LSigWcType id)
+--           \n
   | ExpWithTySigOut (LExp id) (LSigWcType Name)
+--           \n
 
   | CoreAnn   SourceText StringLiteral (LExp id)
+--           \n
   | SCC       SourceText StringLiteral (LExp id)
+--           \n
   | TickPragma SourceText (StringLiteral,(Int,Int),(Int,Int))
                ((SourceText,SourceText),(SourceText,SourceText))
                (LExp id) -- (is it GenPragma?)
+--           \n
 
   | Proc      (LPat id) (LCmdTop id)
+--           \n
 
-  | ArrApp    (LExp id) (LExp id) (PostTc id TCRType) ArrAppType Bool
+  | ArrApp    (LExp id) (LExp id) (PostTc id TCRType)
+              ArrAppType Bool
+--           \n
 --  HSE.LeftArrHighApp (don't know how they compare)
+--           \n
   | ArrForm   (LExp id) (Maybe Fixity) [LCmdTop id]
+--           \n
 --  HSE.RightArrHighApp (don't know how they compare)
 
   | EWildPat -- (right comparison?)
+--           \n
 
   | Static    (LExp id)
+--           \n
 
   | Tick      (Tickish id) (LExp id)
+--           \n
 
   | BinTick   Int Int (LExp id)
+--           \n
 
   | EAsPat    (Located id) (LExp id)
+--           \n
 
   | EViewPat  (LExp id) (LExp id)
+--           \n
 
   | ELazyPat  (LExp id)
+--           \n
 
   | Wrap      Wrapper (Exp id)
+--           \n
+
+--
+--
 
 data Pat id
   = WildPat   (PostTc id TCRType)
@@ -127,9 +207,11 @@ data Pat id
 
   | LitPat    Lit
   | NPat      (LOverLit id)
-              (Maybe (SyntaxExp id))  (SyntaxExp id) (PostTc id TCRType)
+              (Maybe (SyntaxExp id))
+              (SyntaxExp id) (PostTc id TCRType)
 
-  | NPlusKPat (Located id) (LOverLit id) (OverLit id) (SyntaxExp id)
+  | NPlusKPat (Located id) (LOverLit id)
+              (OverLit id) (SyntaxExp id)
               (SyntaxExp id) (PostTc id TCRType)
 
   | TuplePat  [LPat id] Boxity [PostTc id TCRType]
@@ -153,7 +235,8 @@ data Pat id
   | PArrPat   [LPat id] (PostTc id TCRType)
 
   | ConPatIn  (Located id) (ConPatDetails id)
-  | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds (ConPatDetails id)
+  | ConPatOut LConLike [TCRType] [TyVar] [EvVar] TcEvBinds
+              (ConPatDetails id)
               Wrapper
 --  PRec
 --  PInfixApp
