@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE DataKinds,GADTs #-}
+{-# LANGUAGE DataKinds,GADTs,PatternSynonyms #-}
 module SyntaxProductIndexed where
 
 data Exp row col id
@@ -1168,40 +1168,45 @@ data ExpL
 
   | ExtL
 
--- toDo: use exp instead of Exp
-data Col row col id exp
-  = OverLitC         (row 'OverLitL)
-                     (OverLit row col id)
-  | AppTypeOutC      (row 'AppTypeOutL)
-                     (Exp row col id) (LWcType row col Name)
-  | RnBracketOutC    (row 'RnBracketOutL)
-                     (Bracket row col Name) [PendingRnSplice row col]
-  | TcBracketOutC    (row 'TcBracketOutL)
-                     (Bracket row col Name) [PendingTcSplice row col]
-  | ExpWithTySigOutC (row 'ExpWithTySigOutL)
-                     (Exp row col id) (LSigWcType row col Name)
+data Col id exp
+  = OverLitC         (Row id 'OverLitL)
+                     (OverLit (Row id) (Col id) id)
+  | AppTypeOutC      (Row id 'AppTypeOutL)
+                     (Exp (Row id) (Col id) id) (LWcType (Row id) (Col id) Name)
+  | RnBracketOutC    (Row id 'RnBracketOutL)
+                     (Bracket (Row id) (Col id) Name)
+                     [PendingRnSplice (Row id) (Col id)]
+  | TcBracketOutC    (Row id 'TcBracketOutL)
+                     (Bracket (Row id) (Col id) Name)
+                     [PendingTcSplice (Row id) (Col id)]
+  | ExpWithTySigOutC (Row id 'ExpWithTySigOutL)
+                     (Exp (Row id) (Col id) id)
+                     (LSigWcType (Row id) (Col id) Name)
 
-data Row row col id lbl where
-  NegAppR       :: SyntaxExp row col id ->
-                   Row row col id 'NegAppL
+data Row id lbl where
+  NegAppR       :: SyntaxExp (Row id) (Col id) id ->
+                   Row id 'NegAppL
   OpAppR        :: PostRn id Fixity ->
-                   Row row col id 'OpAppL
-  IfR           :: Maybe (SyntaxExp row col id) ->
-                   Row row col id 'IfL
+                   Row id 'OpAppL
+  IfR           :: Maybe (SyntaxExp (Row id) (Col id) id) ->
+                   Row id 'IfL
   MultiIfR      :: PostTc id TCRType ->
-                   Row row col id 'MultiIfL
-  RecordConR    :: PostTc id ConLike -> PostTcExp row col ->
-                   Row row col id 'RecordConL
+                   Row id 'MultiIfL
+  RecordConR    :: PostTc id ConLike -> PostTcExp (Row id) (Col id) ->
+                   Row id 'RecordConL
   RecordUpdR    :: PostTc id [ConLike] -> PostTc id [TCRType] ->
                    PostTc id [TCRType] -> PostTc id Wrapper ->
-                   Row row col id 'RecordUpdL
-  ExplicitListR :: PostTc id TCRType -> Maybe (SyntaxExp row col id) ->
-                   Row row col id 'ExplicitListL
+                   Row id 'RecordUpdL
+  ExplicitListR :: PostTc id TCRType -> Maybe (SyntaxExp (Row id) (Col id) id) ->
+                   Row id 'ExplicitListL
   ExplicitPArrR :: PostTc id TCRType ->
-                   Row row col id 'ExplicitPArrL
-  ArithSeqR     :: PostTcExp row col -> Maybe (SyntaxExp row col id) ->
-                   Row row col id 'ArithSeqL
-  PArrSeqR      :: PostTcExp row col ->
-                   Row row col id 'PArrSeqL
+                   Row id 'ExplicitPArrL
+  ArithSeqR     :: PostTcExp (Row id) (Col id) ->
+                   Maybe (SyntaxExp (Row id) (Col id) id) ->
+                   Row id 'ArithSeqL
+  PArrSeqR      :: PostTcExp (Row id) (Col id) ->
+                   Row id 'PArrSeqL
   DoR           :: PostTc id TCRType ->
-                   Row row col id 'DoL
+                   Row id 'DoL
+
+type Expr id = Exp (Row id) (Col id) id
