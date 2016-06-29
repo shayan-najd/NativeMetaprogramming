@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE DataKinds,GADTs,PatternSynonyms #-}
+{-# LANGUAGE DataKinds,TypeFamilies,PatternSynonyms #-}
 module SyntaxProductIndexed where
 
 data Exp row col id
@@ -1183,39 +1183,40 @@ data Col id exp
                      (Exp (Row id) (Col id) id)
                      (LSigWcType (Row id) (Col id) Name)
 
-data Row id lbl
-  = lbl ~ 'NegAppL       =>
-    NegAppR       (SyntaxExp (Row id) (Col id) id)
+data family   Row id (lbl :: ExpL)
 
-  | lbl ~ 'OpAppL        =>
-    OpAppR        (PostRn id Fixity)
+data instance Row id 'NegAppL
+  = NegAppR (SyntaxExp (Row id) (Col id) id)
 
-  | lbl ~ 'IfL           =>
-    IfR           (Maybe (SyntaxExp (Row id) (Col id) id))
+data instance Row id 'OpAppL
+  = OpAppR        (PostRn id Fixity)
 
-  | lbl ~ 'MultiIfL      =>
-    MultiIfR      (PostTc id TCRType)
+data instance Row id 'IfL
+  = IfR           (Maybe (SyntaxExp (Row id) (Col id) id))
 
-  | lbl ~ 'RecordConL    =>
-    RecordConR    (PostTc id ConLike) (PostTcExp (Row id) (Col id))
+data instance Row id 'MultiIfL
+  = MultiIfR      (PostTc id TCRType)
 
-  | lbl ~ 'RecordUpdL    =>
-    RecordUpdR    (PostTc id [ConLike]) (PostTc id [TCRType])
+data instance Row id 'RecordConL
+  = RecordConR    (PostTc id ConLike) (PostTcExp (Row id) (Col id))
+
+data instance Row id 'RecordUpdL
+  = RecordUpdR    (PostTc id [ConLike]) (PostTc id [TCRType])
                   (PostTc id [TCRType]) (PostTc id Wrapper)
 
-  | lbl ~ 'ExplicitListL =>
-    ExplicitListR (PostTc id TCRType) (Maybe (SyntaxExp (Row id) (Col id) id))
+data instance Row id 'ExplicitListL
+  = ExplicitListR (PostTc id TCRType) (Maybe (SyntaxExp (Row id) (Col id) id))
 
-  | lbl ~ 'ExplicitPArrL =>
-    ExplicitPArrR (PostTc id TCRType)
+data instance Row id 'ExplicitPArrL
+  = ExplicitPArrR (PostTc id TCRType)
 
-  | lbl ~ 'ArithSeqL     =>
-    ArithSeqR     (PostTcExp (Row id) (Col id))
+data instance Row id 'ArithSeqL
+  = ArithSeqR     (PostTcExp (Row id) (Col id))
                   (Maybe (SyntaxExp (Row id) (Col id) id))
-  | lbl ~ 'PArrSeqL      =>
-    PArrSeqR      (PostTcExp (Row id) (Col id))
+data instance Row id 'PArrSeqL
+  = PArrSeqR      (PostTcExp (Row id) (Col id))
 
-  | lbl ~ 'DoL           =>
-    DoR           (PostTc id TCRType)
+data instance Row id 'DoL
+  = DoR           (PostTc id TCRType)
 
 type Expr id = Exp (Row id) (Col id) id
