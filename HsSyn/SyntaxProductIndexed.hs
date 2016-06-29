@@ -1183,30 +1183,39 @@ data Col id exp
                      (Exp (Row id) (Col id) id)
                      (LSigWcType (Row id) (Col id) Name)
 
-data Row id lbl where
-  NegAppR       :: SyntaxExp (Row id) (Col id) id ->
-                   Row id 'NegAppL
-  OpAppR        :: PostRn id Fixity ->
-                   Row id 'OpAppL
-  IfR           :: Maybe (SyntaxExp (Row id) (Col id) id) ->
-                   Row id 'IfL
-  MultiIfR      :: PostTc id TCRType ->
-                   Row id 'MultiIfL
-  RecordConR    :: PostTc id ConLike -> PostTcExp (Row id) (Col id) ->
-                   Row id 'RecordConL
-  RecordUpdR    :: PostTc id [ConLike] -> PostTc id [TCRType] ->
-                   PostTc id [TCRType] -> PostTc id Wrapper ->
-                   Row id 'RecordUpdL
-  ExplicitListR :: PostTc id TCRType -> Maybe (SyntaxExp (Row id) (Col id) id) ->
-                   Row id 'ExplicitListL
-  ExplicitPArrR :: PostTc id TCRType ->
-                   Row id 'ExplicitPArrL
-  ArithSeqR     :: PostTcExp (Row id) (Col id) ->
-                   Maybe (SyntaxExp (Row id) (Col id) id) ->
-                   Row id 'ArithSeqL
-  PArrSeqR      :: PostTcExp (Row id) (Col id) ->
-                   Row id 'PArrSeqL
-  DoR           :: PostTc id TCRType ->
-                   Row id 'DoL
+data Row id lbl
+  = lbl ~ 'NegAppL       =>
+    NegAppR       (SyntaxExp (Row id) (Col id) id)
+
+  | lbl ~ 'OpAppL        =>
+    OpAppR        (PostRn id Fixity)
+
+  | lbl ~ 'IfL           =>
+    IfR           (Maybe (SyntaxExp (Row id) (Col id) id))
+
+  | lbl ~ 'MultiIfL      =>
+    MultiIfR      (PostTc id TCRType)
+
+  | lbl ~ 'RecordConL    =>
+    RecordConR    (PostTc id ConLike) (PostTcExp (Row id) (Col id))
+
+  | lbl ~ 'RecordUpdL    =>
+    RecordUpdR    (PostTc id [ConLike]) (PostTc id [TCRType])
+                  (PostTc id [TCRType]) (PostTc id Wrapper)
+
+  | lbl ~ 'ExplicitListL =>
+    ExplicitListR (PostTc id TCRType) (Maybe (SyntaxExp (Row id) (Col id) id))
+
+  | lbl ~ 'ExplicitPArrL =>
+    ExplicitPArrR (PostTc id TCRType)
+
+  | lbl ~ 'ArithSeqL     =>
+    ArithSeqR     (PostTcExp (Row id) (Col id))
+                  (Maybe (SyntaxExp (Row id) (Col id) id))
+  | lbl ~ 'PArrSeqL      =>
+    PArrSeqR      (PostTcExp (Row id) (Col id))
+
+  | lbl ~ 'DoL           =>
+    DoR           (PostTc id TCRType)
 
 type Expr id = Exp (Row id) (Col id) id
