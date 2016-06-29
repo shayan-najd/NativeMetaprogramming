@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds,GADTs #-}
 module SyntaxProductIndexed where
 
 data Exp row col id
@@ -13,8 +13,8 @@ data Exp row col id
 
   | Lit             (row 'LitL)
                     Lit
-  | OverLit         (row 'OverLitL)
-                    (OverLit row col id)
+--  HsSyn.OverLit
+--                  \n
 
   | App             (row 'AppL)
                     (Exp row col id) (Exp row col id)
@@ -26,26 +26,26 @@ data Exp row col id
                     (Exp row col id) (Exp row col id)
 
   | NegApp          (row 'NegAppL)
-                    (Exp row col id) (SyntaxExp row col id)
+                    (Exp row col id)
 
   | OpApp           (row 'OpAppL)
-                    (Exp row col id) (Exp row col id) (PostRn id Fixity)
-                    (Exp row col id)
+                    (Exp row col id) (Exp row col id) (Exp row col id)
+--                  \n
 
   | AppType         (row 'AppTypeL)
                     (Exp row col id) (LWcType row col id)
-  | AppTypeOut      (row 'AppTypeOutL)
-                    (Exp row col id) (LWcType row col Name)
+-- HsSyn.AppTypeOut
+--                  \n
 
   | Par             (row 'ParL)
                     (Exp row col id)
 
   | If              (row 'IfL)
-                    (Maybe (SyntaxExp row col id))
                     (Exp row col id) (Exp row col id) (Exp row col id)
+--                  \n
 
   | MultiIf         (row 'MultiIfL)
-                    (PostTc id TCRType) [LGRHS row col id (Exp row col id)]
+                    [LGRHS row col id (Exp row col id)]
 
   | Case            (row 'CaseL)
                     (Exp row col id) (MatchGroup row col id (Exp row col id))
@@ -69,13 +69,13 @@ data Exp row col id
                     FastString
 
   | RecordCon       (row 'RecordConL)
-                    (Located id) (PostTc id ConLike) (PostTcExp row col)
-                    (RecordBinds row col id)
+                    (Located id) (RecordBinds row col id)
+--                  \n
 
   | RecordUpd       (row 'RecordUpdL)
                     (Exp row col id) [LRecUpdField row col id]
-                    (PostTc id [ConLike]) (PostTc id [TCRType])
-                    (PostTc id [TCRType]) (PostTc id Wrapper)
+--                  \n
+--                  \n
 
   | ExplicitTuple   (row 'ExplicitTupleL)
                     [LTupArg row col id] Boxity
@@ -83,15 +83,15 @@ data Exp row col id
 --                  \n
 
   | ExplicitList    (row 'ExplicitListL)
-                    (PostTc id TCRType) (Maybe (SyntaxExp row col id))
                     [Exp row col id]
+--                  \n
 
   | ExplicitPArr    (row 'ExplicitPArrL)
-                    (PostTc id TCRType) [Exp row col id]
+                    [Exp row col id]
 
   | ArithSeq        (row 'ArithSeqL)
-                    (PostTcExp row col) (Maybe (SyntaxExp row col id))
                     (ArithSeqInfo row col id)
+--                  \n
 --  ArithSeqInfo.From
 --                  \n
 --  ArithSeqInfo.FromTo
@@ -102,8 +102,8 @@ data Exp row col id
 --                  \n
 
   | PArrSeq         (row 'PArrSeqL)
-                    (PostTcExp row col)
                     (ArithSeqInfo row col id) -- expanding ArithSeqInfo below
+--                  \n
 --  ArithSeqInfo.From
 --  ArithSeqInfo.FromTo
 --                  \n
@@ -113,7 +113,7 @@ data Exp row col id
 
   | Do              (row 'DoL)
                     (StmtContext Name) (LExpLStmts row col id)
-                    (PostTc id TCRType)
+--                  \n
 --  StmtContext.ListComp
 --                  \n
 --  StmtContext.MonadComp
@@ -132,10 +132,10 @@ data Exp row col id
 
   | Bracket         (row 'BracketL)
                     (Bracket row col id)
-  | RnBracketOut    (row 'RnBracketOutL)
-                    (Bracket row col Name) [PendingRnSplice row col]
-  | TcBracketOut    (row 'TcBracketOutL)
-                    (Bracket row col Name) [PendingTcSplice row col]
+--  HsSyn.RnBracketOut
+--                     \n
+--  HsSyn.TcBracketOut
+--                     \n
 --  HSE.QuasiQuote (missing?)
 --                  \n
 
@@ -149,8 +149,8 @@ data Exp row col id
 
   | ExpWithTySig    (row 'ExpWithTySigL)
                     (Exp row col id) (LSigWcType row col id)
-  | ExpWithTySigOut (row 'ExpWithTySigOutL)
-                    (Exp row col id) (LSigWcType row col Name)
+--  HsSyn.ExpWithTySigOut
+--                  \n
 
   | CoreAnn         (row 'CoreAnnL)
                     SourceText StringLiteral (Exp row col id)
@@ -1167,3 +1167,41 @@ data ExpL
   | WrapL
 
   | ExtL
+
+-- toDo: use exp instead of Exp
+data Col row col id exp
+  = OverLitC         (row 'OverLitL)
+                     (OverLit row col id)
+  | AppTypeOutC      (row 'AppTypeOutL)
+                     (Exp row col id) (LWcType row col Name)
+  | RnBracketOutC    (row 'RnBracketOutL)
+                     (Bracket row col Name) [PendingRnSplice row col]
+  | TcBracketOutC    (row 'TcBracketOutL)
+                     (Bracket row col Name) [PendingTcSplice row col]
+  | ExpWithTySigOutC (row 'ExpWithTySigOutL)
+                     (Exp row col id) (LSigWcType row col Name)
+
+data Row row col id lbl where
+  NegAppR       :: SyntaxExp row col id ->
+                   Row row col id 'NegAppL
+  OpAppR        :: PostRn id Fixity ->
+                   Row row col id 'OpAppL
+  IfR           :: Maybe (SyntaxExp row col id) ->
+                   Row row col id 'IfL
+  MultiIfR      :: PostTc id TCRType ->
+                   Row row col id 'MultiIfL
+  RecordConR    :: PostTc id ConLike -> PostTcExp row col ->
+                   Row row col id 'RecordConL
+  RecordUpdR    :: PostTc id [ConLike] -> PostTc id [TCRType] ->
+                   PostTc id [TCRType] -> PostTc id Wrapper ->
+                   Row row col id 'RecordUpdL
+  ExplicitListR :: PostTc id TCRType -> Maybe (SyntaxExp row col id) ->
+                   Row row col id 'ExplicitListL
+  ExplicitPArrR :: PostTc id TCRType ->
+                   Row row col id 'ExplicitPArrL
+  ArithSeqR     :: PostTcExp row col -> Maybe (SyntaxExp row col id) ->
+                   Row row col id 'ArithSeqL
+  PArrSeqR      :: PostTcExp row col ->
+                   Row row col id 'PArrSeqL
+  DoR           :: PostTc id TCRType ->
+                   Row row col id 'DoL
