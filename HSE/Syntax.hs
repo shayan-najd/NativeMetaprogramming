@@ -132,9 +132,9 @@ data Exp l
 
   | BracketExp         l
                        (Bracket l)
---  RnBracketOut
+--  HsSyn.RnBracketOut
 --                     \n
---  TcBracketOut
+--  HsSyn.TcBracketOut
 --                     \n
   | QuasiQuote         l
                        String String
