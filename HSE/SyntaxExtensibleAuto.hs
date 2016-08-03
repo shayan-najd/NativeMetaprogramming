@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE DataKinds,TemplateHaskell #-}
 module SyntaxExtensibleAuto where
+
 import Extensible
+
 
 desugarExtensible "Exp" [d|
  {-# Ann type Exp Extensible #-}
  data Exp
    = Var                QName
-
- --  HsSyn.UnboundVar   (missing?)
 
    | Con                QName
 
@@ -24,7 +24,7 @@ desugarExtensible "Exp" [d|
 
    | InfixApp           Exp QOp Exp
 
- -- HsSyn.AppType       (missing?)
+-- HsSyn.AppType       (missing?)
 
    | Paren              Exp
 
@@ -42,9 +42,9 @@ desugarExtensible "Exp" [d|
 
    | IPVar              IPName
 
- -- HsSyn.RecFld        (missing?)
+-- HsSyn.RecFld        (missing?)
 
- -- HsSyn.OverLabel     (missing?)
+-- HsSyn.OverLabel     (missing?)
 
    | RecConstr          QName [FieldUpdate]
 
@@ -52,38 +52,35 @@ desugarExtensible "Exp" [d|
 
    | Tuple              Boxed [Exp]
 
-   | TupleSection       Boxed [Maybe Exp]
+   | TupleSection       Boxed [TupArg]
 
    | List               [Exp]
 
    | ParArray           [Exp]
 
- --  HsSyn groups below
+--  HsSyn groups below
    | EnumFrom           Exp
-
    | EnumFromTo         Exp Exp
-
    | EnumFromThen       Exp Exp
-
    | EnumFromThenTo     Exp Exp Exp
 
- --  HsSyn groups below
- --  ParArrayFrom       (missing?)
+--  HsSyn groups below
+--  ParArrayFrom       (missing?)
    | ParArrayFromTo     Exp Exp
- --  ParArrayFromThen   (missing?)
+--  ParArrayFromThen   (missing?)
    | ParArrayFromThenTo Exp Exp Exp
 
- --  HsSyn groups below
+--  HsSyn groups below
    | ListComp           Exp [QualStmt]
- --  HsSyn.MonadComp          (missing? same as ListComp?)
+--  HsSyn.MonadComp          (missing? same as ListComp?)
    | ParArrayComp       Exp [[QualStmt]]
    | Do                 [Stmt]
    | MDo                [Stmt]
- --  HsSyn.ArrowExp            (?)
- --  HsSyn.GhciStmtCtxt (missing?)
- --  HsSyn.PatGuard  (missing?)
+--  HsSyn.ArrowExp            (?)
+--  HsSyn.GhciStmtCtxt (missing?)
+--  HsSyn.PatGuard  (missing?)
    | ParComp            Exp [[QualStmt]]
- --  HsSyn.TransStmtCtxt (missing?)
+--  HsSyn.TransStmtCtxt (missing?)
 
    | BracketExp         Bracket
 
@@ -102,8 +99,8 @@ desugarExtensible "Exp" [d|
    | SCCPragma          String Exp
 
    | GenPragma          String (Int, Int) (Int, Int) Exp
- --                     \n
- --                     \n
+--                     \n
+--                     \n
 
    | Proc               Pat Exp
 
@@ -114,19 +111,15 @@ desugarExtensible "Exp" [d|
 
    | ExprHole
 
- -- HsSyn.Static        (missing?)
+-- HsSyn.Static        (missing?)
 
- -- HsSyn.Tick          (missing?)
+-- HsSyn.BinTick       (missing?)
 
- -- HsSyn.BinTick       (missing?)
+-- HsSyn.EAsPat        (missing?)
 
- -- HsSyn.EAsPat        (missing?)
+-- HsSyn.EViewPat      (missing?)
 
- -- HsSyn.EViewPat      (missing?)
-
- -- HsSyn.ELazyPat      (missing?)
-
- -- HsSyn.Wrap          (missing?)
+-- HsSyn.ELazyPat      (missing?)
 
  {-# Ann type Pat Extensible #-}
  data Pat
@@ -136,7 +129,7 @@ desugarExtensible "Exp" [d|
 
    | PLit        Sign Literal
 
- --  HsSyn.NPat (?)
+--  HsSyn.NPat (?)
 
    | PNPlusK     Name Integer
 
@@ -156,16 +149,16 @@ desugarExtensible "Exp" [d|
 
    | PatTypeSig  Pat Type
 
- --  HsSyn.PArrPat (missing?)
+--  HsSyn.PArrPat (missing?)
 
+-- HsSyb packs them together
    | PApp        QName [Pat]
-
    | PRec        QName [PatField]
    | PInfixApp   Pat QName Pat
 
    | PQuasiQuote String String
 
- --  HsSyn.CoPat (missing?)
+--  HsSyn.CoPat (missing?)
 
  {-# Ann type Literal Extensible #-}
  data Literal
@@ -183,9 +176,9 @@ desugarExtensible "Exp" [d|
 
    | PrimWord   Integer  String
 
- --  HsSyn.Int64Prim  (missing?)
+--  HsSyn.Int64Prim  (missing?)
 
- --  HsSyn.Word64Prim (missing?)
+--  HsSyn.Word64Prim (missing?)
 
    | Frac       Rational String
 
@@ -195,7 +188,7 @@ desugarExtensible "Exp" [d|
 
  {-# Ann type Decl Extensible #-}
  data Decl
-   = RoleAnnotDecl     QName [Role]
+   = RoleAnnotDecl     QName [Role] -- [Maybe Role] on HsSyn
 
    | AnnPragma         Annotation
 
@@ -207,20 +200,20 @@ desugarExtensible "Exp" [d|
 
    | DefaultDecl       [Type]
 
- -- HsSyn groups below
+-- HsSyn groups below
    | ForImp            CallConv (Maybe Safety) (Maybe String) Name Type
    | ForExp            CallConv (Maybe String) Name Type
 
    | SpliceDecl        Exp
 
- --  HsSyn.DocD  (missing?)
+--  HsSyn.DocD  (missing?)
 
- --  HsSyn groups below
+--  HsSyn groups below
    | TypeSig           [Name] Type
    | PatSynSig         Name (Maybe [TyVarBind]) (Maybe Context)
-                       (Maybe Context) Type
- --  HsSyn.ClassOpSig
- --  HsSyn.IdSig
+                      (Maybe Context) Type
+--  HsSyn.ClassOpSig
+--  HsSyn.IdSig
    | InfixDecl         Assoc (Maybe Int) [Op]
    | InlineSig         Bool (Maybe Activation) QName
    | SpecSig           (Maybe Activation) QName [Type]
@@ -229,37 +222,37 @@ desugarExtensible "Exp" [d|
    | InlineConlikeSig  (Maybe Activation) QName
    | SpecInlineSig     Bool (Maybe Activation) QName [Type]
 
- --  HsSyn groups below
+--  HsSyn groups below
    | DataFamDecl       (Maybe Context) DeclHead (Maybe Kind)
    | TypeFamDecl       DeclHead (Maybe Kind)
    | ClosedTypeFamDecl DeclHead (Maybe Kind)  [TypeEqn]
    | TypeDecl          DeclHead Type
    | DataDecl          DataOrNew (Maybe Context) DeclHead
-                         [QualConDecl] (Maybe Deriving)
+                        [QualConDecl] (Maybe Deriving)
    | GDataDecl         DataOrNew (Maybe Context) DeclHead
-                         (Maybe Kind) [GadtDecl]    (Maybe Deriving)
+                        (Maybe Kind) [GadtDecl]    (Maybe Deriving)
    | ClassDecl         (Maybe Context) DeclHead [FunDep]
-                         (Maybe [ClassDecl])
+                        (Maybe [ClassDecl])
 
- --  HsSyn groups below
+--  HsSyn groups below
    | InstDecl          (Maybe Overlap) InstRule (Maybe [InstDecl])
    | DataInsDecl       DataOrNew Type [QualConDecl]
-                         (Maybe Deriving)
+                        (Maybe Deriving)
    | GDataInsDecl     DataOrNew Type (Maybe Kind) [GadtDecl]
-                         (Maybe Deriving)
+                        (Maybe Deriving)
    | TypeInsDecl      Type Type
 
- -- HsSyn groups below
+-- HsSyn groups below
    | FunBind          [Match]
    | PatBind          Pat Rhs (Maybe Binds) --expanding Pat below
- --  Pat.PVar
- --  HsSyn.AbsBinds     (what is this?)
- --  HsSyn.AbsBindsSig  (what is this?)
+--  Pat.PVar
+--  HsSyn.AbsBinds     (what is this?)
+--  HsSyn.AbsBindsSig  (what is this?)
    | PatSyn           Pat Pat PatternSynDirection
 
    | DeprPragmaDecl   [([Name], String)]
 
- --  HsSyn.VectD (missing)
+--  HsSyn.VectD (missing)
 
  {-# Ann type Type Extensible #-}
  data Type
@@ -294,27 +287,125 @@ desugarExtensible "Exp" [d|
    | TyInfix     Type QName Type
 
    | TyPromoted  Promoted
- --  Promoted.PromotedInteger
- --  Promoted.PromotedString
- --  Promoted.PromotedCon
- --  Promoted.PromotedList
- --  Promoted.PromotedTuple
- --  Promoted.PromotedUnit
+--  Promoted.PromotedInteger
+--  Promoted.PromotedString
+--  Promoted.PromotedCon
+--  Promoted.PromotedList
+--  Promoted.PromotedTuple
+--  Promoted.PromotedUnit
 
    | TyQuasiQuoteString String
 
- -- HsSyn.QualTy (missing)
+-- HsSyn.QualTy (missing)
 
- -- HsSyn.IParamTy (missing)
+-- HsSyn.IParamTy (missing)
 
- -- HsSyn.DocTy (missing)
+-- HsSyn.DocTy (missing)
 
- -- HsSyn.RecTy (missing)
+-- HsSyn.RecTy (missing)
 
- ------------ the rest is not compared -------------
+ data Boxed
+   = Boxed
+   | Unboxed
 
  data ModuleName
    = ModuleName String
+
+ data ImportDecl
+   = ImportDecl ModuleName Bool Bool Bool (Maybe String)
+               (Maybe ModuleName) (Maybe ImportSpecList)
+ data ImportSpecList
+   = ImportSpecList Bool [ImportSpec]
+
+ data ImportSpec
+   = IVar Name
+   | IAbs Namespace Name
+   | IThingAll Name
+   | IThingWith Name [CName]
+
+
+
+
+
+
+
+
+ type TupArg
+   = Maybe Exp
+--   ...
+
+-- HsSyn.ArithSeqInfo is built-into Exp
+--   ...
+--   ...
+--   ...
+--   ...
+
+-- HsSyn.StmtContext is built-into Exp
+--   ...
+--   ...
+--   ...
+--   ...
+--   ...
+--   ...
+--   ...
+--   ...
+--   ...
+--   ...
+
+-- HSE defines it as `... QName [Role]` in AST
+--   ...
+
+ data Role
+   = Nominal
+   | Representational
+   | Phantom
+   | RoleWildcard
+
+ data Annotation
+   = Ann       Name Exp
+   | TypeAnn   Name Exp
+   | ModuleAnn Exp
+--   ...
+--   ...
+
+-- HSE defines it as `... (Maybe Overlap) InstRule` in AST
+--   ...
+
+ data Overlap
+   = NoOverlap
+--  Overlappable
+--  Overlapping
+   | Overlap
+   | Incoherent
+
+ data GuardedRhs
+   = GuardedRhs [Stmt] Exp
+
+--  [Alt]
+--   ...
+--   ...
+--   ...
+--   ...
+
+ data Alt
+   = Alt Pat Rhs (Maybe Binds)
+ data Rhs
+   = UnGuardedRhs Exp
+   | GuardedRhss  [GuardedRhs]
+--   ...
+--   ...
+
+ data Promoted
+   = PromotedInteger Integer String
+   | PromotedString  String String
+   | PromotedCon     Bool QName
+   | PromotedList    Bool [Type]
+   | PromotedTuple   [Type]
+   | PromotedUnit
+
+------------ the rest is not compared -------------
+
+
 
  data SpecialCon
    = UnitCon
@@ -370,18 +461,6 @@ desugarExtensible "Exp" [d|
    | TypeNamespace
    | PatternNamespace
 
- data ImportDecl
-   = ImportDecl (ModuleName) Bool Bool Bool (Maybe String)
-                  (Maybe (ModuleName)) (Maybe ImportSpecList)
-
- data ImportSpecList
-   = ImportSpecList Bool [ImportSpec]
-
- data ImportSpec
-   = IVar Name
-   | IAbs Namespace Name
-   | IThingAll Name
-   | IThingWith Name [CName]
 
  data Assoc
    = AssocNone
@@ -396,22 +475,12 @@ desugarExtensible "Exp" [d|
  data TypeEqn
    = TypeEqn Type Type
 
- data Annotation
-   = Ann       Name Exp
-   | TypeAnn   Name Exp
-   | ModuleAnn Exp
-
  data BooleanFormula
    = VarFormula   Name
    | AndFormula   [BooleanFormula]
    | OrFormula    [BooleanFormula]
    | ParenFormula BooleanFormula
 
- data Role
-   = Nominal
-   | Representational
-   | Phantom
-   | RoleWildcard
 
  data DataOrNew
    = DataType
@@ -473,31 +542,15 @@ desugarExtensible "Exp" [d|
    | InsType   Type Type
    | InsData   DataOrNew Type [QualConDecl] (Maybe Deriving)
    | InsGData  DataOrNew Type (Maybe Kind) [GadtDecl]
-                 (Maybe Deriving)
+                (Maybe Deriving)
 
  data BangType
    = BangedTy
    | UnpackedTy
    | NoUnpackedTy
 
- data Rhs
-   = UnGuardedRhs Exp
-   | GuardedRhss  [GuardedRhs]
 
- data GuardedRhs
-   = GuardedRhs [Stmt] Exp
 
- data Promoted
-   = PromotedInteger Integer String
-   | PromotedString  String String
-   | PromotedCon     Bool QName
-   | PromotedList    Bool [Type]
-   | PromotedTuple   [Type]
-   | PromotedUnit
-
- data Boxed
-   = Boxed
-   | Unboxed
 
  data TyVarBind
    = KindedVar   Name Kind
@@ -571,11 +624,6 @@ desugarExtensible "Exp" [d|
    | HADDOCK
    | UnknownTool String
 
- data Overlap
-   = NoOverlap
-   | Overlap
-   | Incoherent
-
  data Activation
    = ActiveFrom  Int
    | ActiveUntil Int
@@ -614,7 +662,4 @@ desugarExtensible "Exp" [d|
    = FieldUpdate QName Exp
    | FieldPun QName
    | FieldWildcard
-
- data Alt
-   = Alt Pat Rhs (Maybe Binds)
  |]
