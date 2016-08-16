@@ -895,6 +895,7 @@ desugarExtensible "Exp" [d|
  |]
 
 {-
+-- Extensions 
 
 data HsExp id
    = UnboundVar UnboundVar
